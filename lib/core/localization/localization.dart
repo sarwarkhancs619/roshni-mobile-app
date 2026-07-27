@@ -1,0 +1,297 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+class AppLocalizations {
+  final Locale locale;
+  AppLocalizations(this.locale);
+
+  static AppLocalizations of(BuildContext context) {
+    return Localizations.of<AppLocalizations>(context, AppLocalizations) ??
+        AppLocalizations(const Locale('en'));
+  }
+
+  static final Map<String, Map<String, String>> _localizedValues = {
+    'en': {
+      'app_name': 'RAMS',
+      'app_tagline': 'Empowering Special Adults Through Digital Care',
+      'login': 'Login',
+      'login_title': 'Welcome back',
+      'login_subtitle': 'Login to access the Rehabilitation Management System',
+      'email': 'Email Address',
+      'password': 'Password',
+      'remember_me': 'Remember Me',
+      'forgot_password': 'Forgot Password?',
+      'role_admin': 'Administrator',
+      'role_principal': 'Principal',
+      'role_workshop_staff': 'Workshop Staff',
+      'role_physiotherapist': 'Physiotherapist',
+      'role_speech_therapist': 'Speech Therapist',
+      'role_medical_officer': 'Medical Officer',
+      'dashboard': 'Dashboard',
+      'friends': 'Friends',
+      'attendance': 'Attendance',
+      'workshops': 'Workshops',
+      'iep': 'IEP Module',
+      'physiotherapy': 'Physiotherapy',
+      'speech_therapy': 'Speech Therapy',
+      'medical': 'Medical Module',
+      'reports': 'Reports',
+      'analytics': 'Analytics',
+      'notifications': 'Notifications',
+      'calendar': 'Calendar',
+      'settings': 'Settings',
+      'total_friends': 'Total Friends',
+      'present_today': 'Present Today',
+      'pending_reports': 'Pending Reports',
+      'therapy_sessions': 'Therapy Sessions',
+      'medical_alerts': 'Medical Alerts',
+      'goals_completed': 'Goals Completed',
+      'logout': 'Logout',
+      'language': 'Language',
+      'theme': 'Theme',
+      'dark_mode': 'Dark Mode',
+      'light_mode': 'Light Mode',
+      'system_theme': 'System Theme',
+      'bakery': 'Bakery',
+      'woodwork': 'Woodwork',
+      'farming': 'Farming',
+      'textile': 'Textile',
+      'artwork': 'Artwork',
+      'amin_house': 'Amin House',
+      'roshni_house': 'Roshni House',
+      'house_dashboard': 'House Dashboard',
+      'miscellaneous': 'Miscellaneous Activities',
+      'sports': 'Sports & Physical Activity',
+      'music': 'Music Class',
+      'events': 'Event Participation',
+      'active': 'Active',
+      'inactive': 'Inactive',
+      'save': 'Save',
+      'cancel': 'Cancel',
+      'profile': 'Friend Profile',
+      'reg_num': 'Registration Number',
+      'dob': 'Date of Birth',
+      'age': 'Age',
+      'gender': 'Gender',
+      'blood_group': 'Blood Group',
+      'guardian': 'Guardian',
+      'emergency': 'Emergency Contact',
+      'phone': 'Phone Number',
+      'address': 'Address',
+      'admission_date': 'Admission Date',
+      'mood': 'Mood',
+      'participation': 'Participation',
+      'communication': 'Communication',
+      'independence': 'Independence',
+      'task_completion': 'Task Completion',
+      'notes': 'Notes',
+      'photos': 'Photos',
+      'add_friend': 'Add Friend',
+      'edit_friend': 'Edit Friend',
+      'search': 'Search...',
+      'filter': 'Filter',
+      'recent_activities': 'Recent Activities',
+      'quick_actions': 'Quick Actions',
+      'today_attendance': 'Today\'s Attendance',
+      'present': 'Present',
+      'absent': 'Absent',
+      'leave': 'Leave',
+      'half_day': 'Half Day',
+      'daily_activity': 'Daily Activity',
+      'behavior': 'Behavior',
+      'skills': 'Skills',
+      'goals': 'Goals',
+      'assessment': 'Assessment',
+      'treatment_plan': 'Treatment Plan',
+      'exercises': 'Exercises',
+      'rom': 'Range of Motion',
+      'strength': 'Strength',
+      'balance': 'Balance',
+      'mobility': 'Mobility',
+      'session_reports': 'Session Reports',
+      'speech_assessment': 'Speech Assessment',
+      'lang_assessment': 'Language Assessment',
+      'comm_goals': 'Communication Goals',
+      'therapy_notes': 'Therapy Notes',
+      'medical_history': 'Medical History',
+      'diagnosis': 'Diagnosis',
+      'medication': 'Medication',
+      'prescription': 'Prescription',
+      'vitals': 'Vital Signs',
+      'clinical_notes': 'Clinical Notes',
+      'allergies': 'Allergies',
+      'vaccinations': 'Vaccinations',
+      'upload_document': 'Upload Document',
+      'generate_pdf': 'Generate PDF Report',
+      'export': 'Export Data',
+      'skill_growth': 'Skill Growth',
+      'behavior_trends': 'Behavior Trends',
+      'monthly_comparison': 'Monthly Comparison',
+      'english': 'English',
+      'urdu': 'Urdu',
+      'manage_users': 'Manage Users',
+      'add_user': 'Add User & Role',
+    },
+    'ur': {
+      'app_name': 'رامس (RAMS)',
+      'app_tagline': 'خصوصی افراد کی ڈیجیٹل نگہداشت اور ترقی کا سفر',
+      'login': 'لاگ ان',
+      'login_title': 'خوش آمدید',
+      'login_subtitle': 'بحالی مینجمنٹ سسٹم میں لاگ ان کریں',
+      'email': 'ای میل ایڈریس',
+      'password': 'پاس ورڈ',
+      'remember_me': 'مجھے یاد رکھیں',
+      'forgot_password': 'پاس ورڈ بھول گئے؟',
+      'role_admin': 'ایڈمنسٹریٹر',
+      'role_principal': 'پرنسپل',
+      'role_workshop_staff': 'ورکشاپ سٹاف',
+      'role_physiotherapist': 'فزیوتھراپسٹ',
+      'role_speech_therapist': 'اسپیچ تھراپسٹ',
+      'role_medical_officer': 'میڈیکل افسر / ڈاکٹر',
+      'dashboard': 'ڈیش بورڈ',
+      'friends': 'دوست (Friends)',
+      'attendance': 'حاضری',
+      'workshops': 'ورکشاپس',
+      'iep': 'انفرادی تعلیمی منصوبہ',
+      'physiotherapy': 'فزیوتھراپی',
+      'speech_therapy': 'اسپیچ تھراپی',
+      'medical': 'میڈیکل ریکارڈ',
+      'reports': 'رپورٹس',
+      'analytics': 'تجزیات',
+      'notifications': 'اطلاعات',
+      'calendar': 'کیلنڈر',
+      'settings': 'ترتیبات',
+      'total_friends': 'کل دوست',
+      'present_today': 'آج حاضر',
+      'pending_reports': 'زیر التواء رپورٹس',
+      'therapy_sessions': 'تھراپی سیشنز',
+      'medical_alerts': 'میڈیکل الرٹس',
+      'goals_completed': 'مکمل شدہ اہداف',
+      'logout': 'لاگ آؤٹ',
+      'language': 'زبان',
+      'theme': 'تھیم',
+      'dark_mode': 'ڈارک موڈ',
+      'light_mode': 'لائٹ موڈ',
+      'system_theme': 'سسٹم تھیم',
+      'bakery': 'بیکری',
+      'woodwork': 'ووڈ ورک',
+      'farming': 'فارمنگ',
+      'textile': 'ٹیکسٹائل',
+      'artwork': 'آرٹ ورک',
+      'amin_house': 'امین ہاؤس',
+      'roshni_house': 'روشنی ہاؤس',
+      'house_dashboard': 'ہاؤس ڈیش بورڈ',
+      'miscellaneous': 'متفرق سرگرمیاں',
+      'sports': 'کھیل اور جسمانی سرگرمی',
+      'music': 'موسیقی کی کلاس',
+      'events': 'تقریب میں شرکت',
+      'active': 'سرگرم',
+      'inactive': 'غیر فعال',
+      'save': 'محفوظ کریں',
+      'cancel': 'منسوخ کریں',
+      'profile': 'دوست کا پروفائل',
+      'reg_num': 'رجسٹریشن نمبر',
+      'dob': 'تاریخ پیدائش',
+      'age': 'عمر',
+      'gender': 'جنس',
+      'blood_group': 'بلڈ گروپ',
+      'guardian': 'سرپرست',
+      'emergency': 'ہنگامی رابطہ',
+      'phone': 'فون نمبر',
+      'address': 'پتہ',
+      'admission_date': 'داخلہ کی تاریخ',
+      'mood': 'مزاج',
+      'participation': 'شرکت',
+      'communication': 'مواصلات',
+      'independence': 'خود مختاری',
+      'task_completion': 'کام کی تکمیل',
+      'notes': 'نوٹس',
+      'photos': 'تصاویر',
+      'add_friend': 'نیا دوست شامل کریں',
+      'edit_friend': 'ترمیم کریں',
+      'search': 'تلاش کریں...',
+      'filter': 'فلٹر',
+      'recent_activities': 'حالیہ سرگرمیاں',
+      'quick_actions': 'فوری اقدامات',
+      'today_attendance': 'آج کی حاضری',
+      'present': 'حاضر',
+      'absent': 'غیر حاضر',
+      'leave': 'رخصت',
+      'half_day': 'آدھا دن',
+      'daily_activity': 'روزمرہ سرگرمی',
+      'behavior': 'رویہ',
+      'skills': 'مہارتیں',
+      'goals': 'اہداف',
+      'assessment': 'تشخیص',
+      'treatment_plan': 'علاج کا منصوبہ',
+      'exercises': 'ورزشیں',
+      'rom': 'حرکت کی حد (ROM)',
+      'strength': 'طاقت',
+      'balance': 'توازن',
+      'mobility': 'نقل و حرکت',
+      'session_reports': 'سیشن رپورٹ',
+      'speech_assessment': 'بولنے کی تشخیص',
+      'lang_assessment': 'زبان کی تشخیص',
+      'comm_goals': 'مواصلاتی اہداف',
+      'therapy_notes': 'تھراپی نوٹس',
+      'medical_history': 'طبی تاریخ',
+      'diagnosis': 'تشخیص (مرض)',
+      'medication': 'ادویات',
+      'prescription': 'نسخہ',
+      'vitals': 'اہم علامات (Vitals)',
+      'clinical_notes': 'طبی نوٹس',
+      'allergies': 'الرجی',
+      'vaccinations': 'ویکسینیشن',
+      'upload_document': 'دستاویز اپ لوڈ کریں',
+      'generate_pdf': 'پی ڈی ایف رپورٹ بنائیں',
+      'export': 'ڈیٹا ایکسپورٹ کریں',
+      'skill_growth': 'مہارت کی ترقی',
+      'behavior_trends': 'رویے کے رجحانات',
+      'monthly_comparison': 'ماہانہ موازنہ',
+      'english': 'انگریزی',
+      'urdu': 'اردو',
+      'manage_users': 'صارفین کا انتظام',
+      'add_user': 'صارف اور کردار شامل کریں',
+    }
+  };
+
+  String translate(String key) {
+    return _localizedValues[locale.languageCode]?[key] ?? key;
+  }
+}
+
+class AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
+  const AppLocalizationsDelegate();
+
+  @override
+  bool isSupported(Locale locale) => ['en', 'ur'].contains(locale.languageCode);
+
+  @override
+  Future<AppLocalizations> load(Locale locale) async {
+    return AppLocalizations(locale);
+  }
+
+  @override
+  bool shouldReload(AppLocalizationsDelegate old) => false;
+}
+
+// Riverpod Localizations State Manager
+class LanguageNotifier extends StateNotifier<Locale> {
+  LanguageNotifier() : super(const Locale('en'));
+
+  void setLocale(Locale locale) {
+    state = locale;
+  }
+
+  void toggleLanguage() {
+    if (state.languageCode == 'en') {
+      state = const Locale('ur');
+    } else {
+      state = const Locale('en');
+    }
+  }
+}
+
+final localeProvider = StateNotifierProvider<LanguageNotifier, Locale>((ref) {
+  return LanguageNotifier();
+});

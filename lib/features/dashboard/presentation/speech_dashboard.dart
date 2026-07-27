@@ -1,0 +1,203 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import '../../../core/shared/widgets/responsive_layout.dart';
+import '../../../core/theme/theme.dart';
+import '../../../core/localization/localization.dart';
+import '../../friends/presentation/friends_provider.dart';
+
+class SpeechDashboardScreen extends ConsumerWidget {
+  const SpeechDashboardScreen({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final localizations = AppLocalizations.of(context);
+    final friends = ref.watch(friendsProvider);
+
+    return ResponsiveLayout(
+      title: localizations.translate('role_speech_therapist') + ' ' + localizations.translate('dashboard'),
+      currentRoute: '/dashboard/speech',
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Banner
+            _buildHeaderBanner(context, localizations),
+            const SizedBox(height: 24),
+
+            // Today's list of sessions
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Today\'s Speech Therapy Sessions',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                    ),
+                    const SizedBox(height: 16),
+                    ListView.separated(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: friends.length > 3 ? 3 : friends.length,
+                      separatorBuilder: (context, index) => const Divider(),
+                      itemBuilder: (context, index) {
+                        final friend = friends[index];
+                        final double screenWidth = MediaQuery.of(context).size.width;
+                        final bool isMobile = screenWidth < 600;
+
+                        if (isMobile) {
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8.0),
+                            child: InkWell(
+                              onTap: () => context.push('/therapy/speech/${friend.id}'),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      CircleAvatar(
+                                        backgroundImage: NetworkImage(friend.photoUrl),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(friend.fullName, style: const TextStyle(fontWeight: FontWeight.bold)),
+                                            Text('Status: Active • Workshop: ${localizations.translate(friend.assignedWorkshopId)}', style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
+                                          ],
+                                        ),
+                                      ),
+                                      const Icon(Icons.chevron_right, size: 20),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 8),
+                                  SizedBox(
+                                    width: double.infinity,
+                                    child: ElevatedButton(
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: AppTheme.primaryColor,
+                                        minimumSize: const Size(double.infinity, 36),
+                                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                                      ),
+                                      onPressed: () {
+                                        context.push('/therapy/speech/${friend.id}');
+                                      },
+                                      child: const Text('Record Session', style: TextStyle(fontSize: 12)),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        }
+
+                        return ListTile(
+                          leading: CircleAvatar(
+                            backgroundImage: NetworkImage(friend.photoUrl),
+                          ),
+                          title: Text(friend.fullName, style: const TextStyle(fontWeight: FontWeight.bold)),
+                          subtitle: Text('Status: Active • Workshop: ${localizations.translate(friend.assignedWorkshopId)}'),
+                          trailing: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppTheme.primaryColor,
+                              minimumSize: const Size(120, 36),
+                              padding: const EdgeInsets.symmetric(horizontal: 12),
+                            ),
+                            onPressed: () {
+                              context.push('/therapy/speech/${friend.id}');
+                            },
+                            child: const Text('Record Session', style: TextStyle(fontSize: 12)),
+                          ),
+                          onTap: () => context.push('/therapy/speech/${friend.id}'),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            // Friends directory for Speech Therapy
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'All Friends - Speech Assessment Index',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                    ),
+                    const SizedBox(height: 16),
+                    ListView.separated(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: friends.length,
+                      separatorBuilder: (context, index) => const Divider(),
+                      itemBuilder: (context, index) {
+                        final friend = friends[index];
+                        return ListTile(
+                          leading: CircleAvatar(
+                            backgroundImage: NetworkImage(friend.photoUrl),
+                          ),
+                          title: Text(friend.fullName, style: const TextStyle(fontWeight: FontWeight.bold)),
+                          subtitle: Text('Communication level: Moderate • Speech Goals: 3 active'),
+                          trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                          onTap: () => context.push('/therapy/speech/${friend.id}'),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeaderBanner(BuildContext context, AppLocalizations localizations) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: AppTheme.primaryColor,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: const [
+              Icon(Icons.record_voice_over, color: Colors.white, size: 36),
+              SizedBox(width: 12),
+              Text(
+                'Speech Therapy Management Portal',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 20,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Record vocal ability, language skills, design customized communication logs, and build speaking goals to monitor weekly success.',
+            style: TextStyle(color: Colors.white70, fontSize: 13),
+          ),
+        ],
+      ),
+    );
+  }
+}
