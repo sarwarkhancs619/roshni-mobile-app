@@ -496,12 +496,20 @@ class _PhysioDetailsScreenState extends ConsumerState<PhysioDetailsScreen> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                const Row(
-                                  children: [
-                                    Icon(Icons.accessibility_new, color: AppTheme.primaryColor),
-                                    SizedBox(width: 8),
-                                    Text('Physical Assessment Parameters', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                                  ],
+                                const Expanded(
+                                  child: Row(
+                                    children: [
+                                      Icon(Icons.accessibility_new, color: AppTheme.primaryColor),
+                                      SizedBox(width: 8),
+                                      Expanded(
+                                        child: Text(
+                                          'Physical Assessment Parameters',
+                                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                                 if (canEditPhysio)
                                   IconButton(
@@ -550,29 +558,65 @@ class _PhysioDetailsScreenState extends ConsumerState<PhysioDetailsScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                const Row(
+                            LayoutBuilder(
+                              builder: (context, constraints) {
+                                final isNarrow = constraints.maxWidth < 500;
+                                final titleRow = const Row(
                                   children: [
                                     Icon(Icons.fitness_center, color: Colors.teal),
                                     SizedBox(width: 8),
-                                    Text('Tailored Activities & Exercises', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                                  ],
-                                ),
-                                if (canEditPhysio)
-                                  ElevatedButton.icon(
-                                    icon: const Icon(Icons.add, size: 16),
-                                    label: const Text('Add Activity', style: TextStyle(fontSize: 12)),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.teal,
-                                      foregroundColor: Colors.white,
-                                      visualDensity: VisualDensity.compact,
-                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                    Expanded(
+                                      child: Text(
+                                        'Tailored Activities & Exercises',
+                                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
                                     ),
-                                    onPressed: _showAddExerciseDialog,
-                                  ),
-                              ],
+                                  ],
+                                );
+
+                                if (isNarrow) {
+                                  return Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      titleRow,
+                                      if (canEditPhysio) ...[
+                                        const SizedBox(height: 10),
+                                        ElevatedButton.icon(
+                                          icon: const Icon(Icons.add, size: 16),
+                                          label: const Text('Add Activity', style: TextStyle(fontSize: 12)),
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: Colors.teal,
+                                            foregroundColor: Colors.white,
+                                            visualDensity: VisualDensity.compact,
+                                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                          ),
+                                          onPressed: _showAddExerciseDialog,
+                                        ),
+                                      ],
+                                    ],
+                                  );
+                                }
+
+                                return Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Expanded(child: titleRow),
+                                    if (canEditPhysio)
+                                      ElevatedButton.icon(
+                                        icon: const Icon(Icons.add, size: 16),
+                                        label: const Text('Add Activity', style: TextStyle(fontSize: 12)),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.teal,
+                                          foregroundColor: Colors.white,
+                                          visualDensity: VisualDensity.compact,
+                                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                        ),
+                                        onPressed: _showAddExerciseDialog,
+                                      ),
+                                  ],
+                                );
+                              },
                             ),
                             const SizedBox(height: 12),
                             if (_exercises.isEmpty)
@@ -794,31 +838,57 @@ class _PhysioDetailsScreenState extends ConsumerState<PhysioDetailsScreen> {
         borderRadius: BorderRadius.circular(10),
         border: Border.all(color: const Color(0xFFBFDBFE)),
       ),
-      child: Row(
-        children: [
-          const Icon(Icons.visibility_outlined, color: Color(0xFF1D4ED8), size: 22),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Principal / Administrative Oversight Console (Read-Only Mode)',
-                  style: TextStyle(color: Color(0xFF1E3A8A), fontSize: 13, fontWeight: FontWeight.bold),
-                ),
-                Text(
-                  'Reviewing physical assessment progress, range of motion, muscle strength, and clinical therapy session histories.',
-                  style: TextStyle(color: Colors.blueGrey.shade800, fontSize: 12),
-                ),
-              ],
-            ),
-          ),
-          Container(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final isNarrow = constraints.maxWidth < 600;
+          final titleCol = Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Principal / Administrative Oversight Console (Read-Only Mode)',
+                style: TextStyle(color: Color(0xFF1E3A8A), fontSize: 13, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                'Reviewing physical assessment progress, range of motion, muscle strength, and clinical therapy session histories.',
+                style: TextStyle(color: Colors.blueGrey.shade800, fontSize: 12),
+              ),
+            ],
+          );
+
+          final readOnlyBadge = Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(color: const Color(0xFF1E40AF), borderRadius: BorderRadius.circular(20)),
             child: const Text('READ ONLY', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
-          ),
-        ],
+          );
+
+          if (isNarrow) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Icon(Icons.visibility_outlined, color: Color(0xFF1D4ED8), size: 22),
+                    readOnlyBadge,
+                  ],
+                ),
+                const SizedBox(height: 8),
+                titleCol,
+              ],
+            );
+          }
+
+          return Row(
+            children: [
+              const Icon(Icons.visibility_outlined, color: Color(0xFF1D4ED8), size: 22),
+              const SizedBox(width: 10),
+              Expanded(child: titleCol),
+              const SizedBox(width: 8),
+              readOnlyBadge,
+            ],
+          );
+        },
       ),
     );
   }

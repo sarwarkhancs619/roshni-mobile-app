@@ -462,12 +462,20 @@ class _SpeechDetailsScreenState extends ConsumerState<SpeechDetailsScreen> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                const Row(
-                                  children: [
-                                    Icon(Icons.record_voice_over, color: Color(0xFF6A1B9A)),
-                                    SizedBox(width: 8),
-                                    Text('Speech & Communication Parameters', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                                  ],
+                                const Expanded(
+                                  child: Row(
+                                    children: [
+                                      Icon(Icons.record_voice_over, color: Color(0xFF6A1B9A)),
+                                      SizedBox(width: 8),
+                                      Expanded(
+                                        child: Text(
+                                          'Speech & Communication Parameters',
+                                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                                 if (canEditSpeech)
                                   IconButton(
@@ -515,29 +523,66 @@ class _SpeechDetailsScreenState extends ConsumerState<SpeechDetailsScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                const Row(
+                            LayoutBuilder(
+                              builder: (context, constraints) {
+                                final isNarrow = constraints.maxWidth < 500;
+                                final titleWidget = const Row(
+                                  mainAxisSize: MainAxisSize.min,
                                   children: [
                                     Icon(Icons.auto_stories, color: Colors.purple),
                                     SizedBox(width: 8),
-                                    Text('Tailored Activities & Target Goals', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                                  ],
-                                ),
-                                if (canEditSpeech)
-                                  ElevatedButton.icon(
-                                    icon: const Icon(Icons.add, size: 16),
-                                    label: const Text('Add Activity', style: TextStyle(fontSize: 12)),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: const Color(0xFF6A1B9A),
-                                      foregroundColor: Colors.white,
-                                      visualDensity: VisualDensity.compact,
-                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                    Flexible(
+                                      child: Text(
+                                        'Tailored Activities & Target Goals',
+                                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
                                     ),
-                                    onPressed: _showAddActivityDialog,
-                                  ),
-                              ],
+                                  ],
+                                );
+
+                                if (isNarrow) {
+                                  return Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      titleWidget,
+                                      if (canEditSpeech) ...[
+                                        const SizedBox(height: 10),
+                                        ElevatedButton.icon(
+                                          icon: const Icon(Icons.add, size: 16),
+                                          label: const Text('Add Activity', style: TextStyle(fontSize: 12)),
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: const Color(0xFF6A1B9A),
+                                            foregroundColor: Colors.white,
+                                            visualDensity: VisualDensity.compact,
+                                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                          ),
+                                          onPressed: _showAddActivityDialog,
+                                        ),
+                                      ],
+                                    ],
+                                  );
+                                }
+
+                                return Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    titleWidget,
+                                    if (canEditSpeech)
+                                      ElevatedButton.icon(
+                                        icon: const Icon(Icons.add, size: 16),
+                                        label: const Text('Add Activity', style: TextStyle(fontSize: 12)),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: const Color(0xFF6A1B9A),
+                                          foregroundColor: Colors.white,
+                                          visualDensity: VisualDensity.compact,
+                                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                        ),
+                                        onPressed: _showAddActivityDialog,
+                                      ),
+                                  ],
+                                );
+                              },
                             ),
                             const SizedBox(height: 12),
                             if (_activities.isEmpty)
@@ -729,40 +774,75 @@ class _SpeechDetailsScreenState extends ConsumerState<SpeechDetailsScreen> {
       );
     }
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: const Color(0xFFEFF6FF),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: const Color(0xFFBFDBFE)),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.visibility_outlined, color: Color(0xFF1D4ED8), size: 22),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Principal / Administrative Oversight Console (Read-Only Mode)',
-                  style: TextStyle(color: Color(0xFF1E3A8A), fontSize: 13, fontWeight: FontWeight.bold),
-                ),
-                Text(
-                  'Reviewing articulation milestones, language comprehension progress, and speech therapy clinical logs.',
-                  style: TextStyle(color: Colors.blueGrey.shade800, fontSize: 12),
-                ),
-              ],
-            ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isNarrow = constraints.maxWidth < 600;
+        final badge = Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(color: const Color(0xFF1E40AF), borderRadius: BorderRadius.circular(20)),
+          child: const Text('READ ONLY', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+        );
+
+        return Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: const Color(0xFFEFF6FF),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: const Color(0xFFBFDBFE)),
           ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(color: const Color(0xFF1E40AF), borderRadius: BorderRadius.circular(20)),
-            child: const Text('READ ONLY', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
-          ),
-        ],
-      ),
+          child: isNarrow
+              ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Row(
+                          children: [
+                            Icon(Icons.visibility_outlined, color: Color(0xFF1D4ED8), size: 20),
+                            SizedBox(width: 8),
+                            Text(
+                              'Administrative Oversight',
+                              style: TextStyle(color: Color(0xFF1E3A8A), fontSize: 13, fontWeight: FontWeight.bold),
+                            ),
+                          ],
+                        ),
+                        badge,
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Reviewing articulation milestones, language comprehension progress, and speech therapy clinical logs.',
+                      style: TextStyle(color: Colors.blueGrey.shade800, fontSize: 12),
+                    ),
+                  ],
+                )
+              : Row(
+                  children: [
+                    const Icon(Icons.visibility_outlined, color: Color(0xFF1D4ED8), size: 22),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Principal / Administrative Oversight Console (Read-Only Mode)',
+                            style: TextStyle(color: Color(0xFF1E3A8A), fontSize: 13, fontWeight: FontWeight.bold),
+                          ),
+                          Text(
+                            'Reviewing articulation milestones, language comprehension progress, and speech therapy clinical logs.',
+                            style: TextStyle(color: Colors.blueGrey.shade800, fontSize: 12),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    badge,
+                  ],
+                ),
+        );
+      },
     );
   }
 

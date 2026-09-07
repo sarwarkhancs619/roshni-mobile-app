@@ -246,56 +246,69 @@ class _PhysioDashboardScreenState extends ConsumerState<PhysioDashboardScreen> {
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
-                child: Row(
-                  children: [
-                    Expanded(
-                      flex: 3,
-                      child: TextField(
-                        controller: _searchController,
-                        decoration: InputDecoration(
-                          hintText: 'Search beneficiary by name or registration ID...',
-                          prefixIcon: const Icon(Icons.search, color: AppTheme.primaryColor),
-                          suffixIcon: _searchQuery.isNotEmpty
-                              ? IconButton(
-                                  icon: const Icon(Icons.clear),
-                                  onPressed: () {
-                                    _searchController.clear();
-                                    setState(() => _searchQuery = '');
-                                  },
-                                )
-                              : null,
-                          isDense: true,
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                        ),
-                        onChanged: (val) => setState(() => _searchQuery = val.trim()),
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final isNarrow = constraints.maxWidth < 600;
+                    final searchField = TextField(
+                      controller: _searchController,
+                      decoration: InputDecoration(
+                        hintText: 'Search beneficiary by name or registration ID...',
+                        prefixIcon: const Icon(Icons.search, color: AppTheme.primaryColor),
+                        suffixIcon: _searchQuery.isNotEmpty
+                            ? IconButton(
+                                icon: const Icon(Icons.clear),
+                                onPressed: () {
+                                  _searchController.clear();
+                                  setState(() => _searchQuery = '');
+                                },
+                              )
+                            : null,
+                        isDense: true,
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      flex: 2,
-                      child: DropdownButtonFormField<String>(
-                        value: _workshopFilter,
-                        decoration: InputDecoration(
-                          labelText: 'Workshop Filter',
-                          isDense: true,
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                        ),
-                        items: [
-                          const DropdownMenuItem(value: 'all', child: Text('All Workshops')),
-                          const DropdownMenuItem(value: 'bakery', child: Text('Bakery')),
-                          const DropdownMenuItem(value: 'woodwork', child: Text('Woodwork')),
-                          const DropdownMenuItem(value: 'farming', child: Text('Farming')),
-                          const DropdownMenuItem(value: 'textile', child: Text('Textile')),
-                          const DropdownMenuItem(value: 'artwork', child: Text('Artwork')),
+                      onChanged: (val) => setState(() => _searchQuery = val.trim()),
+                    );
+
+                    final dropdown = DropdownButtonFormField<String>(
+                      value: _workshopFilter,
+                      decoration: InputDecoration(
+                        labelText: 'Workshop Filter',
+                        isDense: true,
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                      items: [
+                        const DropdownMenuItem(value: 'all', child: Text('All Workshops')),
+                        const DropdownMenuItem(value: 'bakery', child: Text('Bakery')),
+                        const DropdownMenuItem(value: 'woodwork', child: Text('Woodwork')),
+                        const DropdownMenuItem(value: 'farming', child: Text('Farming')),
+                        const DropdownMenuItem(value: 'textile', child: Text('Textile')),
+                        const DropdownMenuItem(value: 'artwork', child: Text('Artwork')),
+                      ],
+                      onChanged: (val) {
+                        if (val != null) setState(() => _workshopFilter = val);
+                      },
+                    );
+
+                    if (isNarrow) {
+                      return Column(
+                        children: [
+                          searchField,
+                          const SizedBox(height: 12),
+                          dropdown,
                         ],
-                        onChanged: (val) {
-                          if (val != null) setState(() => _workshopFilter = val);
-                        },
-                      ),
-                    ),
-                  ],
+                      );
+                    }
+
+                    return Row(
+                      children: [
+                        Expanded(flex: 3, child: searchField),
+                        const SizedBox(width: 12),
+                        Expanded(flex: 2, child: dropdown),
+                      ],
+                    );
+                  },
                 ),
               ),
             ),
@@ -310,33 +323,60 @@ class _PhysioDashboardScreenState extends ConsumerState<PhysioDashboardScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Column(
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        final isNarrow = constraints.maxWidth < 600;
+                        final titleColumn = Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const Text(
                               'Physical Assessment & Rehabilitation Roster',
                               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                             ),
+                            const SizedBox(height: 4),
                             Text(
                               'Showing ${filtered.length} of ${friends.length} beneficiaries under clinical physical therapy review.',
                               style: const TextStyle(color: Colors.grey, fontSize: 12),
                             ),
                           ],
-                        ),
-                        if (isPrincipalOrAdmin)
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: Colors.amber.shade50,
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(color: Colors.amber.shade300),
-                            ),
-                            child: const Text('Oversight View', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.amber)),
-                          ),
-                      ],
+                        );
+
+                        final badge = isPrincipalOrAdmin
+                            ? Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: Colors.amber.shade50,
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(color: Colors.amber.shade300),
+                                ),
+                                child: const Text('Oversight View', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.amber)),
+                              )
+                            : null;
+
+                        if (isNarrow) {
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              titleColumn,
+                              if (badge != null) ...[
+                                const SizedBox(height: 8),
+                                badge,
+                              ],
+                            ],
+                          );
+                        }
+
+                        return Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(child: titleColumn),
+                            if (badge != null) ...[
+                              const SizedBox(width: 8),
+                              badge,
+                            ],
+                          ],
+                        );
+                      },
                     ),
                     const SizedBox(height: 16),
                     if (filtered.isEmpty)
@@ -358,81 +398,82 @@ class _PhysioDashboardScreenState extends ConsumerState<PhysioDashboardScreen> {
 
                           return Padding(
                             padding: const EdgeInsets.symmetric(vertical: 10.0),
-                            child: Row(
-                              children: [
-                                CircleAvatar(
+                            child: LayoutBuilder(
+                              builder: (context, constraints) {
+                                final isNarrow = constraints.maxWidth < 600;
+                                final avatar = CircleAvatar(
                                   radius: 24,
                                   backgroundImage: provider,
                                   backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.1),
                                   child: provider == null
                                       ? Text(friend.fullName[0], style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primaryColor))
                                       : null,
-                                ),
-                                const SizedBox(width: 14),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Row(
-                                        children: [
-                                          Flexible(
-                                            child: Text(
-                                              friend.fullName,
-                                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                          ),
-                                          const SizedBox(width: 8),
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                            decoration: BoxDecoration(
-                                              color: Colors.blue.shade50,
-                                              borderRadius: BorderRadius.circular(4),
-                                            ),
-                                            child: Text(
-                                              friend.registrationNumber,
-                                              style: TextStyle(fontSize: 10, color: Colors.blue.shade900, fontWeight: FontWeight.bold),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        'Workshop: ${localizations.translate(friend.assignedWorkshopId)} • House: ${friend.assignedHouseId.replaceAll('_', ' ').toUpperCase()}',
-                                        style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
-                                      ),
-                                       const SizedBox(height: 6),
-                                       Builder(
-                                         builder: (context) {
-                                           final box = HiveStorage.getBox(HiveStorage.activitiesBoxName);
-                                           final sessions = (box.get('physio_sessions_${friend.id}') as List?) ?? [];
-                                           final assessment = (box.get('physio_assessment_${friend.id}') as Map?) ?? {};
-                                           final exercises = (box.get('physio_exercises_${friend.id}') as List?) ?? [];
-                                           final hasMobility = assessment['mobility'] != null && assessment['mobility'].toString().isNotEmpty;
+                                );
 
-                                           return Wrap(
-                                             spacing: 6,
-                                             runSpacing: 4,
-                                             children: [
-                                               if (hasMobility)
-                                                 _buildBadge('Mobility: ${assessment['mobility']}', Colors.teal)
-                                               else
-                                                 _buildBadge('Assessment Pending', Colors.orange),
-                                               if (exercises.isNotEmpty)
-                                                 _buildBadge('${exercises.length} Activities', Colors.indigo)
-                                               else
-                                                 _buildBadge('No Exercises', Colors.grey),
-                                               _buildBadge('${sessions.length} Sessions', Colors.blue),
-                                             ],
-                                           );
-                                         },
-                                       ),
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Row(
-                                  mainAxisSize: MainAxisSize.min,
+                                final infoColumn = Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Flexible(
+                                          child: Text(
+                                            friend.fullName,
+                                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                          decoration: BoxDecoration(
+                                            color: Colors.blue.shade50,
+                                            borderRadius: BorderRadius.circular(4),
+                                          ),
+                                          child: Text(
+                                            friend.registrationNumber,
+                                            style: TextStyle(fontSize: 10, color: Colors.blue.shade900, fontWeight: FontWeight.bold),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'Workshop: ${localizations.translate(friend.assignedWorkshopId)} • House: ${friend.assignedHouseId.replaceAll('_', ' ').toUpperCase()}',
+                                      style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                                    ),
+                                    const SizedBox(height: 6),
+                                    Builder(
+                                      builder: (context) {
+                                        final box = HiveStorage.getBox(HiveStorage.activitiesBoxName);
+                                        final sessions = (box.get('physio_sessions_${friend.id}') as List?) ?? [];
+                                        final assessment = (box.get('physio_assessment_${friend.id}') as Map?) ?? {};
+                                        final exercises = (box.get('physio_exercises_${friend.id}') as List?) ?? [];
+                                        final hasMobility = assessment['mobility'] != null && assessment['mobility'].toString().isNotEmpty;
+
+                                        return Wrap(
+                                          spacing: 6,
+                                          runSpacing: 4,
+                                          children: [
+                                            if (hasMobility)
+                                              _buildBadge('Mobility: ${assessment['mobility']}', Colors.teal)
+                                            else
+                                              _buildBadge('Assessment Pending', Colors.orange),
+                                            if (exercises.isNotEmpty)
+                                              _buildBadge('${exercises.length} Activities', Colors.indigo)
+                                            else
+                                              _buildBadge('No Exercises', Colors.grey),
+                                            _buildBadge('${sessions.length} Sessions', Colors.blue),
+                                          ],
+                                        );
+                                      },
+                                    ),
+                                  ],
+                                );
+
+                                final actionButtons = Wrap(
+                                  spacing: 6,
+                                  runSpacing: 6,
+                                  crossAxisAlignment: WrapCrossAlignment.center,
                                   children: [
                                     if (isPhysio || isPrincipalOrAdmin)
                                       IconButton(
@@ -450,8 +491,36 @@ class _PhysioDashboardScreenState extends ConsumerState<PhysioDashboardScreen> {
                                       onPressed: () => context.push('/therapy/physiotherapy/${friend.id}'),
                                     ),
                                   ],
-                                ),
-                              ],
+                                );
+
+                                if (isNarrow) {
+                                  return Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          avatar,
+                                          const SizedBox(width: 14),
+                                          Expanded(child: infoColumn),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 10),
+                                      actionButtons,
+                                    ],
+                                  );
+                                }
+
+                                return Row(
+                                  children: [
+                                    avatar,
+                                    const SizedBox(width: 14),
+                                    Expanded(child: infoColumn),
+                                    const SizedBox(width: 8),
+                                    actionButtons,
+                                  ],
+                                );
+                              },
                             ),
                           );
                         },
