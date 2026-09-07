@@ -36,15 +36,6 @@ void main() async {
     debugPrint('Hive Initialization failed: $e');
   }
 
-  // Attempt Firebase configuration if configuration files exist (wrapped in try-catch to prevent offline crashes)
-  try {
-    // Note: In production, uncomment the line below after configuring flutterfire cli:
-    // await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-    debugPrint('Firebase Services initialized successfully.');
-  } catch (e) {
-    debugPrint('Firebase Services offline mode activated: $e');
-  }
-
   runApp(
     const ProviderScope(
       child: RAMSApp(),

@@ -1,7 +1,4 @@
-# Pin Firebase iOS SDK to 11.6.0 (provides FIRActionCodeSettings.linkDomain for firebase_auth and avoids 11.9+ Swift 6 issues)
-$FirebaseSDKVersion = '11.6.0'
-
-# Set minimum deployment platform for iOS to 14.0 (required by cloud_firestore and Firebase)
+# Set minimum deployment platform for iOS to 14.0
 platform :ios, '14.0'
 
 # CocoaPods analytics sends network stats synchronously affecting flutter build latency.
