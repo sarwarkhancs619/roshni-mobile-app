@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/shared/widgets/responsive_layout.dart';
 import '../../../core/theme/theme.dart';
 import '../../../core/localization/localization.dart';
+import '../../../core/utils/image_utils.dart';
 import 'friends_provider.dart';
 import '../../auth/presentation/auth_providers.dart';
 
@@ -42,7 +43,7 @@ class _FriendListScreenState extends ConsumerState<FriendListScreen> {
     return ResponsiveLayout(
       title: localizations.translate('friends'),
       currentRoute: '/friends',
-      floatingActionButton: user?.role == 'principal'
+      floatingActionButton: (user?.role == 'principal' || user?.role == 'admin')
           ? FloatingActionButton(
               backgroundColor: AppTheme.primaryColor,
               foregroundColor: Colors.white,
@@ -168,8 +169,14 @@ class _FriendListScreenState extends ConsumerState<FriendListScreen> {
                             leading: Hero(
                               tag: 'avatar_${friend.id}',
                               child: CircleAvatar(
+                                key: ValueKey('avatar_${friend.id}_${friend.photoUrl}'),
                                 radius: 28,
-                                backgroundImage: NetworkImage(friend.photoUrl),
+                                backgroundColor: AppTheme.primaryColor.withOpacity(0.1),
+                                backgroundImage: getAppImageProvider(friend.photoUrl),
+                                onBackgroundImageError: (_, __) {},
+                                child: getAppImageProvider(friend.photoUrl) == null
+                                    ? const Icon(Icons.person)
+                                    : null,
                               ),
                             ),
                             title: Text(

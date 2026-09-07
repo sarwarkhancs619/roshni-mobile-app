@@ -56,32 +56,36 @@ class Friend {
   }
 
   factory Friend.fromJson(Map<String, dynamic> json) {
+    DateTime parseDate(dynamic val) {
+      if (val is DateTime) return val;
+      if (val != null) {
+        return DateTime.tryParse(val.toString()) ?? DateTime.now();
+      }
+      return DateTime.now();
+    }
+
     return Friend(
-      id: json['id'] ?? '',
-      registrationNumber: json['registrationNumber'] ?? '',
-      fullName: json['fullName'] ?? '',
-      photoUrl: json['photoUrl'] ?? '',
-      dateOfBirth: json['dateOfBirth'] != null 
-          ? DateTime.parse(json['dateOfBirth']) 
-          : DateTime.now(),
-      gender: json['gender'] ?? 'male',
-      bloodGroup: json['bloodGroup'] ?? 'A+',
-      cnicOrBForm: json['cnicOrBForm'],
-      admissionDate: json['admissionDate'] != null 
-          ? DateTime.parse(json['admissionDate']) 
-          : DateTime.now(),
-      assignedWorkshopId: json['assignedWorkshopId'] ?? 'bakery',
-      assignedHouseId: json['assignedHouseId'] ?? 'amin_house',
-      status: json['status'] ?? 'active',
-      guardianName: json['guardianName'] ?? '',
-      guardianRelation: json['guardianRelation'] ?? '',
-      guardianPhone: json['guardianPhone'] ?? '',
-      guardianEmail: json['guardianEmail'] ?? '',
-      guardianAddress: json['guardianAddress'] ?? '',
-      emergencyName: json['emergencyName'] ?? '',
-      emergencyRelation: json['emergencyRelation'] ?? '',
-      emergencyPhone: json['emergencyPhone'] ?? '',
-      medicalNotesSummary: json['medicalNotesSummary'] ?? '',
+      id: json['id']?.toString() ?? '',
+      registrationNumber: json['registrationNumber']?.toString() ?? json['registration_number']?.toString() ?? '',
+      fullName: json['fullName']?.toString() ?? json['full_name']?.toString() ?? '',
+      photoUrl: json['photoUrl']?.toString() ?? json['photo_url']?.toString() ?? '',
+      dateOfBirth: parseDate(json['dateOfBirth'] ?? json['date_of_birth']),
+      gender: json['gender']?.toString() ?? 'male',
+      bloodGroup: json['bloodGroup']?.toString() ?? json['blood_group']?.toString() ?? 'A+',
+      cnicOrBForm: json['cnicOrBForm']?.toString() ?? json['cnic_or_bform']?.toString(),
+      admissionDate: parseDate(json['admissionDate'] ?? json['admission_date']),
+      assignedWorkshopId: json['assignedWorkshopId']?.toString() ?? json['assigned_workshop_id']?.toString() ?? 'bakery',
+      assignedHouseId: json['assignedHouseId']?.toString() ?? json['assigned_house_id']?.toString() ?? 'amin_house',
+      status: json['status']?.toString() ?? 'active',
+      guardianName: json['guardianName']?.toString() ?? json['guardian_name']?.toString() ?? '',
+      guardianRelation: json['guardianRelation']?.toString() ?? json['guardian_relation']?.toString() ?? '',
+      guardianPhone: json['guardianPhone']?.toString() ?? json['guardian_phone']?.toString() ?? '',
+      guardianEmail: json['guardianEmail']?.toString() ?? json['guardian_email']?.toString() ?? '',
+      guardianAddress: json['guardianAddress']?.toString() ?? json['guardian_address']?.toString() ?? '',
+      emergencyName: json['emergencyName']?.toString() ?? json['emergency_name']?.toString() ?? '',
+      emergencyRelation: json['emergencyRelation']?.toString() ?? json['emergency_relation']?.toString() ?? '',
+      emergencyPhone: json['emergencyPhone']?.toString() ?? json['emergency_phone']?.toString() ?? '',
+      medicalNotesSummary: json['medicalNotesSummary']?.toString() ?? json['medical_notes_summary']?.toString() ?? '',
     );
   }
 

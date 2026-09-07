@@ -7,6 +7,8 @@ class HiveStorage {
   static const String iepBoxName = 'iep';
   static const String medicalBoxName = 'medical';
   static const String usersBoxName = 'users';
+  static const String permissionsBoxName = 'permissions';
+  static const String documentsBoxName = 'documents';
 
   static Future<void> init() async {
     await Hive.initFlutter();
@@ -18,6 +20,8 @@ class HiveStorage {
     await Hive.openBox(iepBoxName);
     await Hive.openBox(medicalBoxName);
     await Hive.openBox(usersBoxName);
+    await Hive.openBox(permissionsBoxName);
+    await Hive.openBox(documentsBoxName);
   }
 
   // Generic methods to read/write from Hive
@@ -52,5 +56,6 @@ class HiveStorage {
     await Hive.box(iepBoxName).clear();
     await Hive.box(medicalBoxName).clear();
     await Hive.box(usersBoxName).clear();
+    await Hive.box(permissionsBoxName).clear();
   }
 }

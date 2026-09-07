@@ -8,6 +8,7 @@ class AppTheme {
   static const Color backgroundColor = Color(0xFFF8FAFC); // Slate Premium Background
   static const Color surfaceColor = Color(0xFFFFFFFF); // Pure White Surface
   static const Color errorColor = Color(0xFFEF4444); // Modern Red
+  static const Color warningColor = Color(0xFFF59E0B); // Amber / Warning
   static const Color successColor = Color(0xFF10B981); // Modern Emerald Green
 
   static const Gradient blueOrangeGradient = LinearGradient(
@@ -48,7 +49,7 @@ class AppTheme {
         style: ElevatedButton.styleFrom(
           backgroundColor: primaryColor,
           foregroundColor: Colors.white,
-          minimumSize: const Size(double.infinity, 50),
+          minimumSize: const Size(64, 48),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
         ),
@@ -78,56 +79,91 @@ class AppTheme {
   }
 
   static ThemeData get darkTheme {
+    const darkBackground = Color(0xFF0F172A); // Modern Slate 900
+    const darkSurface = Color(0xFF1E293B); // Slate 800
+    const darkPrimary = Color(0xFF60A5FA); // Sky Blue 400 (high-contrast on dark)
+    const darkTextPrimary = Color(0xFFF8FAFC); // High-contrast White
+    const darkTextSecondary = Color(0xFF94A3B8); // Slate 400
+
     return ThemeData(
       useMaterial3: true,
+      brightness: Brightness.dark,
+      scaffoldBackgroundColor: darkBackground,
       colorScheme: const ColorScheme.dark(
-        primary: primaryColor,
-        secondary: Color(0xFF0288D1), // Darker Sky Blue
-        tertiary: accentColor,
-        background: Color(0xFF121212),
-        surface: Color(0xFF1E1E1E),
+        primary: darkPrimary,
+        secondary: Color(0xFFF97316),
+        tertiary: Color(0xFF38BDF8),
+        background: darkBackground,
+        surface: darkSurface,
         error: errorColor,
-        onPrimary: Colors.white,
+        onPrimary: Color(0xFF0F172A),
         onSecondary: Colors.white,
-        onBackground: Colors.white70,
-        onSurface: Colors.white70,
+        onBackground: darkTextPrimary,
+        onSurface: darkTextPrimary,
       ),
-      textTheme: GoogleFonts.poppinsTextTheme(ThemeData.dark().textTheme),
+      textTheme: GoogleFonts.poppinsTextTheme(ThemeData.dark().textTheme).apply(
+        bodyColor: darkTextPrimary,
+        displayColor: darkTextPrimary,
+      ),
       cardTheme: CardTheme(
-        color: const Color(0xFF1E1E1E),
+        color: darkSurface,
         elevation: 2,
-        shadowColor: Colors.black.withOpacity(0.3),
+        shadowColor: Colors.black.withOpacity(0.4),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
       appBarTheme: const AppBarTheme(
-        backgroundColor: Color(0xFF1E1E1E),
-        foregroundColor: Colors.white,
+        backgroundColor: darkSurface,
+        foregroundColor: darkTextPrimary,
         elevation: 0,
         centerTitle: true,
       ),
+      tabBarTheme: const TabBarTheme(
+        labelColor: darkPrimary,
+        unselectedLabelColor: darkTextSecondary,
+        indicatorColor: darkPrimary,
+      ),
+      listTileTheme: const ListTileThemeData(
+        textColor: darkTextPrimary,
+        iconColor: darkTextSecondary,
+      ),
+      dialogTheme: const DialogTheme(
+        backgroundColor: darkSurface,
+        titleTextStyle: TextStyle(color: darkTextPrimary, fontSize: 18, fontWeight: FontWeight.bold),
+        contentTextStyle: TextStyle(color: Color(0xFFE2E8F0), fontSize: 14),
+      ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: primaryColor,
+          backgroundColor: const Color(0xFF2563EB),
           foregroundColor: Colors.white,
-          minimumSize: const Size(double.infinity, 50),
+          minimumSize: const Size(64, 48),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
         ),
       ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: darkPrimary,
+          side: const BorderSide(color: darkPrimary),
+        ),
+      ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: const Color(0xFF2C2C2C),
+        fillColor: const Color(0xFF334155), // Slate 700
+        hintStyle: const TextStyle(color: darkTextSecondary),
+        labelStyle: const TextStyle(color: Color(0xFFCBD5E1)),
+        prefixIconColor: darkTextSecondary,
+        suffixIconColor: darkTextSecondary,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey.shade800),
+          borderSide: const BorderSide(color: Color(0xFF475569)),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey.shade800),
+          borderSide: const BorderSide(color: Color(0xFF475569)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: primaryColor, width: 2),
+          borderSide: const BorderSide(color: darkPrimary, width: 2),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),

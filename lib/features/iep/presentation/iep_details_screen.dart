@@ -5,6 +5,7 @@ import '../../../core/theme/theme.dart';
 import '../../friends/presentation/friends_provider.dart';
 import '../../auth/presentation/auth_providers.dart';
 import '../../../core/services/supabase_db_service.dart';
+import '../../../core/storage/hive_storage.dart';
 
 class IepDetailsScreen extends ConsumerStatefulWidget {
   final String friendId;
@@ -17,36 +18,8 @@ class IepDetailsScreen extends ConsumerStatefulWidget {
 class _IepDetailsScreenState extends ConsumerState<IepDetailsScreen> {
   bool _isLoading = true;
   String? _iepId;
-  String _baseline = 'Initial assessment indicates strong physical range-of-motion, mild sensory sensitivity to excessive noise, and moderate self-help capability. Vocational training targets focus on fine-motor task sequence and packaging precision.';
-  List<Map<String, dynamic>> _goals = [
-    {
-      'id': 'g1',
-      'title': 'Baking Dough Prep',
-      'objectives': 'Measure and mix ingredients with minimal guidance.',
-      'strategies': 'Use labeled measuring cups and picture guidelines.',
-      'progress': 80,
-      'status': 'in_progress',
-      'target': '2026-09-30',
-    },
-    {
-      'id': 'g2',
-      'title': 'Social Interaction',
-      'objectives': 'Initiate greeting with peer group during morning assembly.',
-      'strategies': 'Positive reinforcement and peer role-playing.',
-      'progress': 100,
-      'status': 'completed',
-      'target': '2026-07-15',
-    },
-    {
-      'id': 'g3',
-      'title': 'Self-grooming independence',
-      'objectives': 'Tie apron strings independently before workshop start.',
-      'strategies': 'Step-by-step physical mirroring practice.',
-      'progress': 40,
-      'status': 'in_progress',
-      'target': '2026-10-15',
-    }
-  ];
+  String _baseline = '';
+  List<Map<String, dynamic>> _goals = [];
 
   @override
   void initState() {
@@ -75,9 +48,23 @@ class _IepDetailsScreenState extends ConsumerState<IepDetailsScreen> {
         _isLoading = false;
       });
     } else {
-      setState(() {
-        _isLoading = false;
-      });
+      final box = HiveStorage.getBox(HiveStorage.iepBoxName);
+      final dynamic localIep = box.get(widget.friendId);
+      if (localIep != null && localIep is Map) {
+        setState(() {
+          _iepId = localIep['id']?.toString();
+          _baseline = localIep['baseline'] ?? _baseline;
+          final List<dynamic> localGoals = localIep['iep_goals'] ?? [];
+          if (localGoals.isNotEmpty) {
+            _goals = List<Map<String, dynamic>>.from(localGoals);
+          }
+          _isLoading = false;
+        });
+      } else {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -287,8 +274,15 @@ class _IepDetailsScreenState extends ConsumerState<IepDetailsScreen> {
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      _baseline,
-                      style: TextStyle(fontSize: 14, color: Colors.grey.shade800, height: 1.5),
+                      _baseline.isNotEmpty
+                          ? _baseline
+                          : 'No baseline assessment recorded yet. Tap the edit icon to write the baseline summary.',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontStyle: _baseline.isEmpty ? FontStyle.italic : FontStyle.normal,
+                        color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFFCBD5E1) : Colors.grey.shade800,
+                        height: 1.5,
+                      ),
                     ),
                   ],
                 ),
@@ -311,7 +305,34 @@ class _IepDetailsScreenState extends ConsumerState<IepDetailsScreen> {
             const SizedBox(height: 16),
 
             // Goals Expansion/Scroll
-            ListView.builder(
+            if (_goals.isEmpty)
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(32.0),
+                  child: Center(
+                    child: Column(
+                      children: [
+                        Icon(Icons.assignment_outlined, size: 48, color: Colors.grey.shade400),
+                        const SizedBox(height: 12),
+                        const Text(
+                          'No learning goals recorded yet.',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          isPrincipal
+                              ? 'Tap the "+" button below to add an individual learning goal.'
+                              : 'The Principal has not yet defined learning goals for this friend.',
+                          style: const TextStyle(color: Colors.grey, fontSize: 13),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              )
+            else
+              ListView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: _goals.length,
@@ -358,9 +379,21 @@ class _IepDetailsScreenState extends ConsumerState<IepDetailsScreen> {
                           ],
                         ),
                         const SizedBox(height: 8),
-                        Text('Objective: ${goal['objectives']}', style: TextStyle(fontSize: 13, color: Colors.grey.shade800)),
+                        Text(
+                          'Objective: ${goal['objectives']}',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFFCBD5E1) : Colors.grey.shade800,
+                          ),
+                        ),
                         const SizedBox(height: 4),
-                        Text('Strategy: ${goal['strategies']}', style: TextStyle(fontSize: 13, color: Colors.grey.shade600)),
+                        Text(
+                          'Strategy: ${goal['strategies']}',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF94A3B8) : Colors.grey.shade600,
+                          ),
+                        ),
                         const SizedBox(height: 12),
                         
                         // Progress slider

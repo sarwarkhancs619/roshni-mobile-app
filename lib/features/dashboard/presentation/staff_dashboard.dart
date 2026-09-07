@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/shared/widgets/responsive_layout.dart';
 import '../../../core/theme/theme.dart';
 import '../../../core/localization/localization.dart';
+import '../../../core/storage/hive_storage.dart';
 import '../../friends/presentation/friends_provider.dart';
 import '../../auth/presentation/auth_providers.dart';
 
@@ -20,6 +21,17 @@ class StaffDashboardScreen extends ConsumerWidget {
     final friends = ref.watch(friendsProvider);
     // Filter friends assigned to this staff's workshop
     final assignedFriends = friends.where((f) => f.assignedWorkshopId == workshopId).toList();
+    final activeCount = assignedFriends.where((f) => f.status == 'active').length;
+
+    int evaluatedCount = 0;
+    try {
+      final box = HiveStorage.getBox(HiveStorage.activitiesBoxName);
+      for (final friend in assignedFriends) {
+        if (box.containsKey('record_${workshopId}_${friend.id}')) {
+          evaluatedCount++;
+        }
+      }
+    } catch (_) {}
 
     return ResponsiveLayout(
       title: '${localizations.translate(workshopId)} ${localizations.translate('dashboard')}',
@@ -49,10 +61,20 @@ class StaffDashboardScreen extends ConsumerWidget {
                 Expanded(
                   child: _buildCountCard(
                     context,
-                    title: 'Attendance marked',
-                    value: '1/1 present',
+                    title: 'Active Today',
+                    value: '$activeCount/${assignedFriends.length}',
                     icon: Icons.check_box_outlined,
                     color: AppTheme.successColor,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: _buildCountCard(
+                    context,
+                    title: 'Evaluated',
+                    value: '$evaluatedCount/${assignedFriends.length}',
+                    icon: Icons.star_outline,
+                    color: AppTheme.accentColor,
                   ),
                 ),
               ],

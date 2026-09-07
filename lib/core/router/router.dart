@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 // Import screens (which we will create next)
 import '../../features/auth/presentation/login_screen.dart';
 import '../../features/auth/presentation/user_management_screen.dart';
+import '../../features/auth/presentation/permission_requests_screen.dart';
+import '../../features/dashboard/presentation/principal_dashboard.dart';
 import '../../features/dashboard/presentation/admin_dashboard.dart';
 import '../../features/dashboard/presentation/staff_dashboard.dart';
 import '../../features/dashboard/presentation/physio_dashboard.dart';
@@ -54,12 +56,20 @@ final routerProvider = Provider<GoRouter>((ref) {
       
       // Dashboards
       GoRoute(
+        path: '/dashboard/principal',
+        builder: (context, state) => const PrincipalDashboardScreen(),
+      ),
+      GoRoute(
         path: '/dashboard/admin',
         builder: (context, state) => const AdminDashboardScreen(),
       ),
       GoRoute(
         path: '/dashboard/admin/users',
         builder: (context, state) => const UserManagementScreen(),
+      ),
+      GoRoute(
+        path: '/dashboard/admin/permissions',
+        builder: (context, state) => const PermissionRequestsScreen(),
       ),
       GoRoute(
         path: '/dashboard/staff',
@@ -176,8 +186,9 @@ final routerProvider = Provider<GoRouter>((ref) {
 
 String _getDashboardRouteForRole(String? role) {
   switch (role) {
-    case 'admin':
     case 'principal':
+      return '/dashboard/principal';
+    case 'admin':
       return '/dashboard/admin';
     case 'workshop_staff':
       return '/dashboard/staff';

@@ -33,7 +33,9 @@ class AppDrawer extends ConsumerWidget {
             currentAccountPicture: CircleAvatar(
               backgroundColor: Colors.white,
               child: Text(
-                user?.fullName.characters.first.toUpperCase() ?? 'U',
+                (user?.cleanFullName.isNotEmpty == true)
+                    ? user!.cleanFullName.characters.first.toUpperCase()
+                    : 'U',
                 style: const TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
@@ -42,7 +44,7 @@ class AppDrawer extends ConsumerWidget {
               ),
             ),
             accountName: Text(
-              user?.fullName ?? '',
+              user?.displayNameWithRole ?? user?.fullName ?? '',
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
             accountEmail: Text(
@@ -63,6 +65,14 @@ class AppDrawer extends ConsumerWidget {
                   route: _getDashboardRoute(user?.role),
                   currentRoute: currentRoute,
                 ),
+                if (user?.role == 'principal' || user?.role == 'admin')
+                  _buildDrawerItem(
+                    context: context,
+                    icon: Icons.security,
+                    title: 'Principal Vault & IP',
+                    route: '/dashboard/principal',
+                    currentRoute: currentRoute,
+                  ),
                 _buildDrawerItem(
                   context: context,
                   icon: Icons.people,
@@ -88,7 +98,7 @@ class AppDrawer extends ConsumerWidget {
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
-                        color: Colors.grey.shade600,
+                        color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF94A3B8) : Colors.grey.shade600,
                       ),
                     ),
                   ),
@@ -144,7 +154,7 @@ class AppDrawer extends ConsumerWidget {
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
-                        color: Colors.grey.shade600,
+                        color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF94A3B8) : Colors.grey.shade600,
                       ),
                     ),
                   ),
@@ -158,40 +168,30 @@ class AppDrawer extends ConsumerWidget {
                 ],
 
                 const Divider(),
-                // Therapies & Medical (visible to admin or specific roles)
+                // Therapies & Medical (visible to admin, principal, or specific roles)
                 if (user?.role == 'admin' || user?.role == 'principal' || user?.role == 'physiotherapist')
                   _buildDrawerItem(
                     context: context,
                     icon: Icons.accessibility_new,
                     title: localizations.translate('physiotherapy'),
-                    route: '/therapy/physiotherapy/all',
+                    route: '/dashboard/physio',
                     currentRoute: currentRoute,
-                    onTapOverride: () {
-                      // Navigate to first friend or custom list
-                      context.push('/friends');
-                    }
                   ),
                 if (user?.role == 'admin' || user?.role == 'principal' || user?.role == 'speech_therapist')
                   _buildDrawerItem(
                     context: context,
                     icon: Icons.record_voice_over,
                     title: localizations.translate('speech_therapy'),
-                    route: '/therapy/speech/all',
+                    route: '/dashboard/speech',
                     currentRoute: currentRoute,
-                    onTapOverride: () {
-                      context.push('/friends');
-                    }
                   ),
                 if (user?.role == 'admin' || user?.role == 'principal' || user?.role == 'medical_officer')
                   _buildDrawerItem(
                     context: context,
                     icon: Icons.medical_services,
                     title: localizations.translate('medical'),
-                    route: '/medical/all',
+                    route: '/dashboard/medical',
                     currentRoute: currentRoute,
-                    onTapOverride: () {
-                      context.push('/friends');
-                    }
                   ),
 
                 const Divider(),
@@ -287,20 +287,25 @@ class AppDrawer extends ConsumerWidget {
     VoidCallback? onTapOverride,
   }) {
     final isSelected = currentRoute.startsWith(route);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final activeColor = isDark ? const Color(0xFF60A5FA) : AppTheme.primaryColor;
+    final textColor = isSelected ? activeColor : (isDark ? const Color(0xFFF8FAFC) : Colors.black87);
+    final iconColor = isSelected ? activeColor : (isDark ? const Color(0xFF94A3B8) : Colors.grey.shade600);
+
     return ListTile(
       leading: Icon(
         icon,
-        color: isSelected ? AppTheme.primaryColor : Colors.grey.shade600,
+        color: iconColor,
       ),
       title: Text(
         title,
         style: TextStyle(
           fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-          color: isSelected ? AppTheme.primaryColor : Colors.black87,
+          color: textColor,
         ),
       ),
       selected: isSelected,
-      selectedTileColor: AppTheme.primaryColor.withOpacity(0.08),
+      selectedTileColor: isDark ? const Color(0xFF3B82F6).withOpacity(0.2) : AppTheme.primaryColor.withOpacity(0.08),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
       onTap: onTapOverride ??
@@ -315,8 +320,9 @@ class AppDrawer extends ConsumerWidget {
 
   String _getDashboardRoute(String? role) {
     switch (role) {
-      case 'admin':
       case 'principal':
+        return '/dashboard/principal';
+      case 'admin':
         return '/dashboard/admin';
       case 'workshop_staff':
         return '/dashboard/staff';

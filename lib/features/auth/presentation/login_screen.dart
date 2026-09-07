@@ -13,8 +13,8 @@ class LoginScreen extends ConsumerStatefulWidget {
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController(text: 'admin@roshni.org');
-  final _passwordController = TextEditingController(text: 'password123');
+  final _emailController = TextEditingController(text: 'sarwarkhancs619@gmail.com');
+  final _passwordController = TextEditingController();
   bool _obscurePassword = true;
   bool _rememberMe = false;
 
@@ -27,16 +27,33 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   void _submit() async {
     if (_formKey.currentState!.validate()) {
+      FocusScope.of(context).unfocus();
       final success = await ref.read(authProvider.notifier).login(
             _emailController.text,
             _passwordController.text,
           );
       if (!success && mounted) {
-        final error = ref.read(authProvider).errorMessage;
+        final error = ref.read(authProvider).errorMessage ?? 'Invalid email or password';
+        ScaffoldMessenger.of(context).clearSnackBars();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(error ?? 'Login Failed'),
+            content: Row(
+              children: [
+                const Icon(Icons.error_outline, color: Colors.white),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    error,
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                  ),
+                ),
+              ],
+            ),
             backgroundColor: AppTheme.errorColor,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            margin: const EdgeInsets.all(16),
+            duration: const Duration(seconds: 4),
           ),
         );
       }
@@ -136,7 +153,35 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                         fontWeight: FontWeight.bold,
                                       ),
                                 ),
-                                const SizedBox(height: 24),
+                                const SizedBox(height: 16),
+                                if (authState.errorMessage != null && !authState.isLoading) ...[
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                                    decoration: BoxDecoration(
+                                      color: Colors.red.shade50,
+                                      borderRadius: BorderRadius.circular(8),
+                                      border: Border.all(color: Colors.red.shade300),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Icon(Icons.error_outline, color: Colors.red.shade700, size: 20),
+                                        const SizedBox(width: 10),
+                                        Expanded(
+                                          child: Text(
+                                            authState.errorMessage!,
+                                            style: TextStyle(
+                                              color: Colors.red.shade900,
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(height: 16),
+                                ] else
+                                  const SizedBox(height: 8),
                                 
                                 // Email Field
                                 TextFormField(
@@ -245,33 +290,23 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         ),
                       ),
                       const SizedBox(height: 32),
-                      
-                      // Demo credentials guide
+                                         // Staff sign-in notice
                       Container(
-                        padding: const EdgeInsets.all(12),
+                        padding: const EdgeInsets.all(14),
                         decoration: BoxDecoration(
                           color: AppTheme.primaryColor.withOpacity(0.05),
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(10),
                           border: Border.all(color: AppTheme.primaryColor.withOpacity(0.15)),
                         ),
-                        child: Column(
+                        child: Row(
                           children: [
-                            const Text(
-                              'Demo Credentials (Switch roles instantly):',
-                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                            ),
-                            const SizedBox(height: 6),
-                            Wrap(
-                              spacing: 8,
-                              runSpacing: 4,
-                              alignment: WrapAlignment.center,
-                              children: const [
-                                Chip(label: Text('admin@roshni.org', style: TextStyle(fontSize: 10))),
-                                Chip(label: Text('bakery@roshni.org', style: TextStyle(fontSize: 10))),
-                                Chip(label: Text('physio@roshni.org', style: TextStyle(fontSize: 10))),
-                                Chip(label: Text('speech@roshni.org', style: TextStyle(fontSize: 10))),
-                                Chip(label: Text('medical@roshni.org', style: TextStyle(fontSize: 10))),
-                              ],
+                            const Icon(Icons.verified_user_outlined, color: AppTheme.primaryColor, size: 22),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                'Sign in using your Roshni staff credentials or administrator account.',
+                                style: TextStyle(fontSize: 12, color: Colors.grey.shade700, height: 1.3),
+                              ),
                             ),
                           ],
                         ),

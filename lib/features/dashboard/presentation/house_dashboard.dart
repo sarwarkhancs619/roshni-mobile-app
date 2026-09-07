@@ -6,6 +6,8 @@ import '../../../core/shared/widgets/responsive_layout.dart';
 import '../../friends/presentation/friends_provider.dart';
 import '../../auth/presentation/auth_providers.dart';
 
+import '../../../core/storage/hive_storage.dart';
+
 class HouseDashboardScreen extends ConsumerStatefulWidget {
   const HouseDashboardScreen({super.key});
 
@@ -34,7 +36,36 @@ class _HouseDashboardScreenState extends ConsumerState<HouseDashboardScreen> {
     super.dispose();
   }
 
-  void _saveHouseRecords() {
+  void _loadHouseRecords(String friendId) {
+    try {
+      final box = HiveStorage.getBox(HiveStorage.activitiesBoxName);
+      final data = box.get('house_skills_$friendId');
+      if (data != null && data is Map) {
+        setState(() {
+          _hygiene = (data['hygiene'] as num?)?.toDouble() ?? 3.0;
+          _roomCleanup = (data['room_cleanup'] as num?)?.toDouble() ?? 3.0;
+          _tableManners = (data['table_manners'] as num?)?.toDouble() ?? 3.0;
+          _bedMaking = (data['bed_making'] as num?)?.toDouble() ?? 3.0;
+          _musicClass = data['music_class']?.toString() ?? 'active';
+          _sportsActivity = data['sports_activity']?.toString() ?? 'active';
+          _eventController.text = data['event_notes']?.toString() ?? '';
+        });
+        return;
+      }
+    } catch (_) {}
+
+    setState(() {
+      _hygiene = 3.0;
+      _roomCleanup = 3.0;
+      _tableManners = 3.0;
+      _bedMaking = 3.0;
+      _musicClass = 'active';
+      _sportsActivity = 'active';
+      _eventController.clear();
+    });
+  }
+
+  Future<void> _saveHouseRecords() async {
     if (_selectedFriendId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please select a Friend first.')),
@@ -42,12 +73,27 @@ class _HouseDashboardScreenState extends ConsumerState<HouseDashboardScreen> {
       return;
     }
 
+    try {
+      final box = HiveStorage.getBox(HiveStorage.activitiesBoxName);
+      await box.put('house_skills_$_selectedFriendId', {
+        'hygiene': _hygiene,
+        'room_cleanup': _roomCleanup,
+        'table_manners': _tableManners,
+        'bed_making': _bedMaking,
+        'music_class': _musicClass,
+        'sports_activity': _sportsActivity,
+        'event_notes': _eventController.text.trim(),
+        'updated_at': DateTime.now().toIso8601String(),
+      });
+    } catch (_) {}
+
+    if (!mounted) return;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         icon: const Icon(Icons.check_circle_outline, color: AppTheme.successColor, size: 48),
         title: const Text('Residential Records Saved'),
-        content: const Text('House skills and miscellaneous activities have been successfully logged offline.'),
+        content: const Text('House skills and miscellaneous activities have been successfully logged.'),
         actions: [
           TextButton(
             onPressed: () {
@@ -150,6 +196,9 @@ class _HouseDashboardScreenState extends ConsumerState<HouseDashboardScreen> {
                     setState(() {
                       _selectedFriendId = val;
                     });
+                    if (val != null) {
+                      _loadHouseRecords(val);
+                    }
                   },
                 ),
               ),
@@ -159,8 +208,6 @@ class _HouseDashboardScreenState extends ConsumerState<HouseDashboardScreen> {
             if (_selectedFriendId != null) ...[
               // Skills & Miscellaneous activities Grid
               LayoutBuilder(builder: (context, constraints) {
-                final double cardWidth = constraints.maxWidth;
-                
                 return Column(
                   children: [
                     // House Skills Card

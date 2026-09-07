@@ -8,24 +8,110 @@ import '../../friends/presentation/friends_provider.dart';
 import '../../friends/models/friend.dart';
 import '../../auth/presentation/auth_providers.dart';
 
+import '../../../core/storage/hive_storage.dart';
+
 class AdminDashboardScreen extends ConsumerWidget {
   const AdminDashboardScreen({super.key});
+
+  double _getWorkshopProductivity(String workshopId, List<Friend> friends) {
+    final enrolled = friends.where((f) => f.assignedWorkshopId == workshopId).toList();
+    if (enrolled.isEmpty) return 0.0;
+    try {
+      final box = HiveStorage.getBox(HiveStorage.activitiesBoxName);
+      double totalComp = 0.0;
+      int evaluatedCount = 0;
+      for (final f in enrolled) {
+        final rec = box.get('record_${workshopId}_${f.id}');
+        if (rec != null && rec is Map) {
+          evaluatedCount++;
+          totalComp += (rec['task_completion'] as num?)?.toDouble() ?? 0.0;
+        }
+      }
+      if (evaluatedCount > 0) {
+        return (totalComp / (evaluatedCount * 5.0)).clamp(0.0, 1.0);
+      }
+    } catch (_) {}
+    return 0.0;
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final localizations = AppLocalizations.of(context);
     final friends = ref.watch(friendsProvider);
     
-    // Quick statistics variables
+    // Real statistics variables based on current actual data
     final totalFriendsCount = friends.length;
-    const presentTodayCount = 4; // Mock
-    const pendingReportsCount = 3; // Mock
-    const therapySessionsCount = 5; // Mock
-    const medicalAlertsCount = 1; // Mock
-    const completedGoalsCount = 18; // Mock
+    final activeFriends = friends.where((f) => f.status == 'active').toList();
+    final presentTodayCount = activeFriends.length;
+    final pendingReportsCount = friends.where((f) => f.medicalNotesSummary.isEmpty).length;
+    
+    // Real therapy sessions count from Hive
+    int therapySessionsCount = 0;
+    final List<Map<String, dynamic>> realTherapySessions = [];
+    try {
+      final actBox = HiveStorage.getBox(HiveStorage.activitiesBoxName);
+      for (final f in friends) {
+        final physio = actBox.get('physio_sessions_${f.id}');
+        if (physio != null && physio is List) {
+          therapySessionsCount += physio.length;
+          for (final s in physio) {
+            if (s is Map) {
+              realTherapySessions.add({
+                'friend': f.fullName,
+                'type': 'Physiotherapy',
+                'date': s['date']?.toString() ?? 'Recent',
+                'notes': s['notes']?.toString() ?? '',
+              });
+            }
+          }
+        }
+        final speech = actBox.get('speech_sessions_${f.id}');
+        if (speech != null && speech is List) {
+          therapySessionsCount += speech.length;
+          for (final s in speech) {
+            if (s is Map) {
+              realTherapySessions.add({
+                'friend': f.fullName,
+                'type': 'Speech Therapy',
+                'date': s['date']?.toString() ?? 'Recent',
+                'notes': s['notes']?.toString() ?? '',
+              });
+            }
+          }
+        }
+      }
+    } catch (_) {}
+
+    final medicalAlertsFriends = friends.where((f) => f.medicalNotesSummary.isNotEmpty).toList();
+    final medicalAlertsCount = medicalAlertsFriends.length;
+
+    // Real completed IEP goals from Hive
+    int completedGoalsCount = 0;
+    final List<Map<String, dynamic>> realCompletedGoals = [];
+    try {
+      final iepBox = HiveStorage.getBox(HiveStorage.iepBoxName);
+      for (final f in friends) {
+        final iepData = iepBox.get(f.id);
+        if (iepData != null && iepData is Map) {
+          final goals = iepData['iep_goals'];
+          if (goals != null && goals is List) {
+            for (final g in goals) {
+              if (g is Map && g['status'] == 'completed') {
+                completedGoalsCount++;
+                realCompletedGoals.add({
+                  'friend': f.fullName,
+                  'title': g['title']?.toString() ?? 'Goal',
+                  'objectives': g['objectives']?.toString() ?? '',
+                });
+              }
+            }
+          }
+        }
+      }
+    } catch (_) {}
 
     return ResponsiveLayout(
-      title: localizations.translate('admin_dashboard') + ' - RAMS',
+      title: '${localizations.translate('admin_dashboard')} - RAMS',
       currentRoute: '/dashboard/admin',
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24.0),
@@ -33,7 +119,7 @@ class AdminDashboardScreen extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Welcome banner
-            _buildWelcomeBanner(context, localizations, ref.watch(authProvider).user?.fullName ?? 'Admin'),
+            _buildWelcomeBanner(context, localizations, ref.watch(authProvider).user?.displayNameWithRole ?? 'Admin'),
             const SizedBox(height: 24),
             
             // Statistics Grid (Responsive columns)
@@ -47,6 +133,9 @@ class AdminDashboardScreen extends ConsumerWidget {
               therapySessionsCount,
               medicalAlertsCount,
               completedGoalsCount,
+              realTherapySessions,
+              medicalAlertsFriends,
+              realCompletedGoals,
             ),
             const SizedBox(height: 28),
             
@@ -59,21 +148,21 @@ class AdminDashboardScreen extends ConsumerWidget {
                     children: [
                       Expanded(
                         flex: 3,
-                        child: _buildMainDashboardWidgets(context, localizations),
+                        child: _buildMainDashboardWidgets(context, localizations, ref, friends),
                       ),
                       const SizedBox(width: 24),
                       Expanded(
                         flex: 2,
-                        child: _buildSidebarWidgets(context, localizations),
+                        child: _buildSidebarWidgets(context, localizations, friends, realCompletedGoals, realTherapySessions, medicalAlertsFriends),
                       ),
                     ],
                   );
                 } else {
                   return Column(
                     children: [
-                      _buildMainDashboardWidgets(context, localizations),
+                      _buildMainDashboardWidgets(context, localizations, ref, friends),
                       const SizedBox(height: 24),
-                      _buildSidebarWidgets(context, localizations),
+                      _buildSidebarWidgets(context, localizations, friends, realCompletedGoals, realTherapySessions, medicalAlertsFriends),
                     ],
                   );
                 }
@@ -108,6 +197,18 @@ class AdminDashboardScreen extends ConsumerWidget {
           Text(
             'RAMS Admin portal is operational. Today is ${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}. All systems synchronized.',
             style: const TextStyle(color: Colors.white70, fontSize: 14),
+          ),
+          const SizedBox(height: 12),
+          ElevatedButton.icon(
+            icon: const Icon(Icons.security, size: 16),
+            label: const Text('Open Principal Vault & IP Console'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.white,
+              foregroundColor: AppTheme.primaryColor,
+              elevation: 2,
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            ),
+            onPressed: () => context.push('/dashboard/principal'),
           ),
         ],
       ),
@@ -153,6 +254,9 @@ class AdminDashboardScreen extends ConsumerWidget {
     int therapySessions,
     int medicalAlerts,
     int completedGoals,
+    List<Map<String, dynamic>> realTherapySessions,
+    List<Friend> medicalAlertsFriends,
+    List<Map<String, dynamic>> realCompletedGoals,
   ) {
     final double width = MediaQuery.of(context).size.width;
     int crossAxisCount = width > 1200 ? 6 : (width > 800 ? 3 : 2);
@@ -175,12 +279,14 @@ class AdminDashboardScreen extends ConsumerWidget {
           onTap: () {
             _showStatsDetailsBottomSheet(
               context,
-              title: 'Total Registered Friends',
-              children: friends.map<Widget>((f) => ListTile(
-                leading: CircleAvatar(backgroundImage: NetworkImage(f.photoUrl)),
-                title: Text(f.fullName),
-                subtitle: Text('ID: ${f.registrationNumber} • ${f.assignedWorkshopId.toUpperCase()}'),
-              )).toList(),
+              title: 'Total Registered Beneficiaries ($totalFriends)',
+              children: friends.isEmpty
+                  ? [const ListTile(title: Text('No friends registered yet.'))]
+                  : friends.map<Widget>((f) => ListTile(
+                      leading: CircleAvatar(backgroundImage: NetworkImage(f.photoUrl)),
+                      title: Text(f.fullName),
+                      subtitle: Text('ID: ${f.registrationNumber} • ${f.assignedWorkshopId.toUpperCase()}'),
+                    )).toList(),
             );
           },
         ),
@@ -193,18 +299,20 @@ class AdminDashboardScreen extends ConsumerWidget {
           onTap: () {
             _showStatsDetailsBottomSheet(
               context,
-              title: 'Today\'s Attendance Details',
-              children: friends.take(4).map<Widget>((f) => ListTile(
-                leading: const Icon(Icons.check_circle, color: AppTheme.successColor),
-                title: Text(f.fullName),
-                subtitle: const Text('Status: Present Today'),
-              )).toList() + <Widget>[
-                ListTile(
-                  leading: const Icon(Icons.cancel, color: AppTheme.errorColor),
-                  title: Text(friends.isNotEmpty ? friends.last.fullName : 'No resident'),
-                  subtitle: const Text('Status: Absent Today'),
-                )
-              ],
+              title: 'Today\'s Attendance Status ($presentToday Present)',
+              children: friends.isEmpty
+                  ? [const ListTile(title: Text('No attendance data.'))]
+                  : friends.map<Widget>((f) {
+                      final isPresent = f.status == 'active';
+                      return ListTile(
+                        leading: Icon(
+                          isPresent ? Icons.check_circle : Icons.cancel,
+                          color: isPresent ? AppTheme.successColor : AppTheme.errorColor,
+                        ),
+                        title: Text(f.fullName),
+                        subtitle: Text(isPresent ? 'Status: Active / Present' : 'Status: Inactive / Absent'),
+                      );
+                    }).toList(),
             );
           },
         ),
@@ -215,26 +323,22 @@ class AdminDashboardScreen extends ConsumerWidget {
           icon: Icons.pending_actions,
           color: AppTheme.accentColor,
           onTap: () {
+            final pendingFriends = friends.where((f) => f.medicalNotesSummary.isEmpty).toList();
             _showStatsDetailsBottomSheet(
               context,
-              title: 'Pending Progress Reports',
-              children: [
-                const ListTile(
-                  leading: Icon(Icons.description_outlined, color: AppTheme.accentColor),
-                  title: Text('Weekly IEP Progress Report'),
-                  subtitle: Text('Required for Bakery workshop residents'),
-                ),
-                const ListTile(
-                  leading: Icon(Icons.medical_services_outlined, color: AppTheme.accentColor),
-                  title: Text('Monthly Medical Update'),
-                  subtitle: Text('Pending for Ali Raza'),
-                ),
-                const ListTile(
-                  leading: Icon(Icons.accessibility_new, color: AppTheme.accentColor),
-                  title: Text('Physiotherapy Session Log'),
-                  subtitle: Text('Required for Ayesha Bibi'),
-                ),
-              ],
+              title: 'Pending Progress & Medical Reviews ($pendingReports)',
+              children: pendingFriends.isEmpty
+                  ? [
+                      const ListTile(
+                        leading: Icon(Icons.check_circle, color: AppTheme.successColor),
+                        title: Text('All registered friends have medical notes on file.'),
+                      )
+                    ]
+                  : pendingFriends.map<Widget>((f) => ListTile(
+                      leading: const Icon(Icons.description_outlined, color: AppTheme.accentColor),
+                      title: Text(f.fullName),
+                      subtitle: Text('Reg: ${f.registrationNumber} • ${f.assignedWorkshopId.toUpperCase()} • Review required'),
+                    )).toList(),
             );
           },
         ),
@@ -247,24 +351,23 @@ class AdminDashboardScreen extends ConsumerWidget {
           onTap: () {
             _showStatsDetailsBottomSheet(
               context,
-              title: 'Today\'s Therapy Schedule',
-              children: [
-                const ListTile(
-                  leading: Icon(Icons.spatial_audio_off_sharp, color: AppTheme.secondaryColor),
-                  title: Text('Speech Therapy: Bilal Mustafa'),
-                  subtitle: Text('Time: 11:30 AM - Room B'),
-                ),
-                const ListTile(
-                  leading: Icon(Icons.accessibility_new, color: AppTheme.secondaryColor),
-                  title: Text('Physiotherapy: Zainab Fatima'),
-                  subtitle: Text('Time: 02:00 PM - Gym Hall'),
-                ),
-                const ListTile(
-                  leading: Icon(Icons.spatial_audio_off_sharp, color: AppTheme.secondaryColor),
-                  title: Text('Speech Therapy: Usman Tariq'),
-                  subtitle: Text('Time: 03:00 PM - Room B'),
-                ),
-              ],
+              title: 'Recorded Therapy Sessions ($therapySessions total)',
+              children: realTherapySessions.isEmpty
+                  ? [
+                      const ListTile(
+                        leading: Icon(Icons.spa_outlined, color: Colors.grey),
+                        title: Text('No clinical therapy sessions logged yet.'),
+                        subtitle: Text('Log sessions via Physiotherapy or Speech Therapy consoles.'),
+                      )
+                    ]
+                  : realTherapySessions.map<Widget>((s) => ListTile(
+                      leading: Icon(
+                        s['type'] == 'Physiotherapy' ? Icons.accessibility_new : Icons.record_voice_over,
+                        color: AppTheme.secondaryColor,
+                      ),
+                      title: Text('${s['type']}: ${s['friend']}'),
+                      subtitle: Text('Date: ${s['date']} ${s['notes'].isNotEmpty ? "• ${s['notes']}" : ""}'),
+                    )).toList(),
             );
           },
         ),
@@ -277,14 +380,19 @@ class AdminDashboardScreen extends ConsumerWidget {
           onTap: () {
             _showStatsDetailsBottomSheet(
               context,
-              title: 'Active Medical Alerts',
-              children: [
-                ListTile(
-                  leading: const Icon(Icons.warning, color: AppTheme.errorColor),
-                  title: Text(friends.length > 2 ? '${friends[2].fullName}: Medication Adjust' : 'Medication Adjust'),
-                  subtitle: const Text('Dr. Usman Ahmed: Monitor blood pressure twice daily after dosage adjustment.'),
-                ),
-              ],
+              title: 'Active Medical Alerts ($medicalAlerts)',
+              children: medicalAlertsFriends.isEmpty
+                  ? [
+                      const ListTile(
+                        leading: Icon(Icons.health_and_safety, color: AppTheme.successColor),
+                        title: Text('No active critical medical alerts.'),
+                      )
+                    ]
+                  : medicalAlertsFriends.map<Widget>((f) => ListTile(
+                      leading: const Icon(Icons.warning_amber_rounded, color: AppTheme.errorColor),
+                      title: Text(f.fullName),
+                      subtitle: Text(f.medicalNotesSummary),
+                    )).toList(),
             );
           },
         ),
@@ -297,24 +405,20 @@ class AdminDashboardScreen extends ConsumerWidget {
           onTap: () {
             _showStatsDetailsBottomSheet(
               context,
-              title: 'IEP Goals Completed Recently',
-              children: [
-                const ListTile(
-                  leading: Icon(Icons.star, color: Colors.purple),
-                  title: Text('Zainab Fatima achieved goal:'),
-                  subtitle: Text('Mixing ingredients independently (Bakery)'),
-                ),
-                const ListTile(
-                  leading: Icon(Icons.star, color: Colors.purple),
-                  title: Text('Ali Raza achieved goal:'),
-                  subtitle: Text('Sanding wooden blocks without supervision (Woodwork)'),
-                ),
-                const ListTile(
-                  leading: Icon(Icons.star, color: Colors.purple),
-                  title: Text('Ayesha Bibi achieved goal:'),
-                  subtitle: Text('Identifying colored threads (Textile)'),
-                ),
-              ],
+              title: 'Achieved IEP Learning Goals ($completedGoals)',
+              children: realCompletedGoals.isEmpty
+                  ? [
+                      const ListTile(
+                        leading: Icon(Icons.star_border, color: Colors.purple),
+                        title: Text('No learning goals completed yet.'),
+                        subtitle: Text('Mark goals complete in the IEP section.'),
+                      )
+                    ]
+                  : realCompletedGoals.map<Widget>((g) => ListTile(
+                      leading: const Icon(Icons.star, color: Colors.purple),
+                      title: Text('${g['friend']} achieved goal:'),
+                      subtitle: Text('${g['title']} ${g['objectives'].isNotEmpty ? "• ${g['objectives']}" : ""}'),
+                    )).toList(),
             );
           },
         ),
@@ -380,7 +484,7 @@ class AdminDashboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildMainDashboardWidgets(BuildContext context, AppLocalizations localizations) {
+  Widget _buildMainDashboardWidgets(BuildContext context, AppLocalizations localizations, WidgetRef ref, List<Friend> friends) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -395,7 +499,7 @@ class AdminDashboardScreen extends ConsumerWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'Workshop Productivity Index',
+                      'Workshop Productivity Index (Real Evaluations)',
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                             fontWeight: FontWeight.bold,
                           ),
@@ -404,10 +508,12 @@ class AdminDashboardScreen extends ConsumerWidget {
                   ],
                 ),
                 const SizedBox(height: 20),
-                _buildProgressRow(context, 'Bakery (Baking & Packaging)', 0.85, AppTheme.primaryColor),
-                _buildProgressRow(context, 'Textile (Cutting & Stitching)', 0.72, AppTheme.secondaryColor),
-                _buildProgressRow(context, 'Woodwork (Sanding & Assembly)', 0.90, Colors.orange),
-                _buildProgressRow(context, 'Artwork & Handicrafts', 0.65, AppTheme.accentColor),
+                _buildProgressRow(context, 'Bakery (Baking & Packaging)', _getWorkshopProductivity('bakery', friends), AppTheme.primaryColor),
+                _buildProgressRow(context, 'Textile (Cutting & Stitching)', _getWorkshopProductivity('textile', friends), AppTheme.secondaryColor),
+                _buildProgressRow(context, 'Woodwork (Sanding & Assembly)', _getWorkshopProductivity('woodwork', friends), Colors.orange),
+                _buildProgressRow(context, 'Artwork & Handicrafts', _getWorkshopProductivity('artwork', friends), AppTheme.accentColor),
+                _buildProgressRow(context, 'Organic Farming', _getWorkshopProductivity('farming', friends), Colors.green),
+                _buildProgressRow(context, 'Sports & Physical Fitness', _getWorkshopProductivity('sports', friends), Colors.indigo),
               ],
             ),
           ),
@@ -438,6 +544,13 @@ class AdminDashboardScreen extends ConsumerWidget {
                       label: localizations.translate('manage_users'),
                       onTap: () => context.push('/dashboard/admin/users'),
                     ),
+                    if (ref.watch(authProvider).user?.role == 'principal')
+                      _buildActionButton(
+                        context,
+                        icon: Icons.security,
+                        label: 'Manage Permissions',
+                        onTap: () => context.push('/dashboard/admin/permissions'),
+                      ),
                     _buildActionButton(
                       context,
                       icon: Icons.person_add_alt_1,
@@ -487,7 +600,10 @@ class AdminDashboardScreen extends ConsumerWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
-              Text('${(percentage * 100).toInt()}%', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: color)),
+              Text(
+                percentage > 0 ? '${(percentage * 100).toInt()}%' : '0% (No evals)',
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: percentage > 0 ? color : Colors.grey),
+              ),
             ],
           ),
           const SizedBox(height: 6),
@@ -517,9 +633,9 @@ class AdminDashboardScreen extends ConsumerWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
-          color: AppTheme.primaryColor.withOpacity(0.06),
+          color: AppTheme.primaryColor.withValues(alpha: 0.06),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppTheme.primaryColor.withOpacity(0.15)),
+          border: Border.all(color: AppTheme.primaryColor.withValues(alpha: 0.15)),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -540,7 +656,14 @@ class AdminDashboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildSidebarWidgets(BuildContext context, AppLocalizations localizations) {
+  Widget _buildSidebarWidgets(
+    BuildContext context, 
+    AppLocalizations localizations,
+    List<Friend> friends,
+    List<Map<String, dynamic>> realCompletedGoals,
+    List<Map<String, dynamic>> realTherapySessions,
+    List<Friend> medicalAlertsFriends,
+  ) {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(20.0),
@@ -554,38 +677,69 @@ class AdminDashboardScreen extends ConsumerWidget {
                   ),
             ),
             const SizedBox(height: 16),
-            _buildActivityItem(
-              context,
-              title: 'Attendance marked',
-              desc: 'Ali Raza marked present in Woodwork workshop.',
-              time: '10 mins ago',
-              icon: Icons.check_circle,
-              iconColor: AppTheme.successColor,
-            ),
-            _buildActivityItem(
-              context,
-              title: 'IEP Goal update',
-              desc: 'Zainab Fatima achieved goal: "Mixing ingredients independently".',
-              time: '1 hour ago',
-              icon: Icons.star,
-              iconColor: AppTheme.accentColor,
-            ),
-            _buildActivityItem(
-              context,
-              title: 'Speech assessment',
-              desc: 'Speech Therapist Amina added initial review for Bilal Mustafa.',
-              time: '2 hours ago',
-              icon: Icons.spatial_audio_off_sharp,
-              iconColor: AppTheme.secondaryColor,
-            ),
-            _buildActivityItem(
-              context,
-              title: 'Medical Alert',
-              desc: 'Dr. Usman prescribed medication adjust for Usman Tariq.',
-              time: 'Yesterday',
-              icon: Icons.warning_amber_rounded,
-              iconColor: AppTheme.errorColor,
-            ),
+            if (friends.isNotEmpty)
+              _buildActivityItem(
+                context,
+                title: 'Beneficiary Active',
+                desc: '${friends.first.fullName} active in ${friends.first.assignedWorkshopId.toUpperCase()} workshop.',
+                time: 'Today',
+                icon: Icons.check_circle,
+                iconColor: AppTheme.successColor,
+              ),
+            if (realCompletedGoals.isNotEmpty)
+              _buildActivityItem(
+                context,
+                title: 'IEP Goal update',
+                desc: '${realCompletedGoals.first['friend']} achieved: "${realCompletedGoals.first['title']}".',
+                time: 'Recently',
+                icon: Icons.star,
+                iconColor: AppTheme.accentColor,
+              )
+            else if (friends.length > 1)
+              _buildActivityItem(
+                context,
+                title: 'Beneficiary Active',
+                desc: '${friends[1].fullName} assigned to ${friends[1].assignedWorkshopId.toUpperCase()} workshop.',
+                time: 'Today',
+                icon: Icons.store,
+                iconColor: AppTheme.primaryColor,
+              ),
+            if (realTherapySessions.isNotEmpty)
+              _buildActivityItem(
+                context,
+                title: 'Clinical session',
+                desc: '${realTherapySessions.first['type']} recorded for ${realTherapySessions.first['friend']}.',
+                time: realTherapySessions.first['date'],
+                icon: Icons.spatial_audio_off_sharp,
+                iconColor: AppTheme.secondaryColor,
+              )
+            else if (friends.length > 2)
+              _buildActivityItem(
+                context,
+                title: 'Beneficiary Active',
+                desc: '${friends[2].fullName} assigned to ${friends[2].assignedHouseId.toUpperCase()}.',
+                time: 'Today',
+                icon: Icons.home,
+                iconColor: AppTheme.secondaryColor,
+              ),
+            if (medicalAlertsFriends.isNotEmpty)
+              _buildActivityItem(
+                context,
+                title: 'Medical Alert',
+                desc: '${medicalAlertsFriends.first.fullName}: ${medicalAlertsFriends.first.medicalNotesSummary}',
+                time: 'Current',
+                icon: Icons.warning_amber_rounded,
+                iconColor: AppTheme.errorColor,
+              )
+            else
+              _buildActivityItem(
+                context,
+                title: 'System Synchronized',
+                desc: 'All resident records synchronized with RAMS core database.',
+                time: 'Operational',
+                icon: Icons.cloud_done,
+                iconColor: AppTheme.successColor,
+              ),
           ],
         ),
       ),
@@ -608,7 +762,7 @@ class AdminDashboardScreen extends ConsumerWidget {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: iconColor.withOpacity(0.1),
+              color: iconColor.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: Icon(icon, color: iconColor, size: 16),

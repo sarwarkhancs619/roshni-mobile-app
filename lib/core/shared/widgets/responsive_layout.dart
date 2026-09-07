@@ -22,8 +22,9 @@ class ResponsiveLayout extends ConsumerWidget {
 
   String _getDashboardRoute(String? role) {
     switch (role) {
-      case 'admin':
       case 'principal':
+        return '/dashboard/principal';
+      case 'admin':
         return '/dashboard/admin';
       case 'workshop_staff':
         return '/dashboard/staff';
@@ -59,6 +60,51 @@ class ResponsiveLayout extends ConsumerWidget {
             context.go(dashboardRoute);
           },
         ),
+      if (user != null)
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 6.0),
+          child: Center(
+            child: width < 650
+                ? Tooltip(
+                    message: user.displayNameWithRole,
+                    child: CircleAvatar(
+                      radius: 14,
+                      backgroundColor: Colors.white.withOpacity(0.25),
+                      child: Text(
+                        user.cleanFullName.isNotEmpty ? user.cleanFullName[0].toUpperCase() : 'U',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  )
+                : Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: Colors.white.withOpacity(0.25)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.person, size: 14, color: Colors.white),
+                        const SizedBox(width: 5),
+                        Text(
+                          user.displayNameWithRole,
+                          style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+          ),
+        ),
     ];
 
     if (isLargeScreen) {
@@ -89,7 +135,14 @@ class ResponsiveLayout extends ConsumerWidget {
       // Mobile / Portrait UI: Appbar with Drawer slide-in
       return Scaffold(
         appBar: AppBar(
-          title: Text(title),
+          title: Text(
+            title,
+            style: TextStyle(
+              fontSize: width < 400 ? 15 : 18,
+              fontWeight: FontWeight.bold,
+            ),
+            overflow: TextOverflow.ellipsis,
+          ),
           actions: finalActions,
         ),
         drawer: AppDrawer(currentRoute: currentRoute),

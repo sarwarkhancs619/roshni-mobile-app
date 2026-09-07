@@ -74,7 +74,10 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                 Expanded(
                   child: Text(
                     'Mark present, absent, leave, or half-day status for each Friend. Changes are synchronized automatically.',
-                    style: TextStyle(color: Colors.grey.shade700, fontSize: 13),
+                    style: TextStyle(
+                      color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFFCBD5E1) : Colors.grey.shade700,
+                      fontSize: 13,
+                    ),
                   ),
                 ),
               ],
@@ -193,7 +196,9 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
             style: TextStyle(
               fontSize: 12,
               fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-              color: isSelected ? color : Colors.black87,
+              color: isSelected
+                  ? color
+                  : (Theme.of(context).brightness == Brightness.dark ? const Color(0xFFF1F5F9) : Colors.black87),
             ),
           ),
         ],

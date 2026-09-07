@@ -13,6 +13,7 @@ import '../../friends/presentation/friends_provider.dart';
 import '../../auth/presentation/auth_providers.dart';
 import '../../auth/models/app_user.dart';
 import '../../friends/models/friend.dart';
+import 'widgets/executive_report_view.dart';
 
 class ReportsScreen extends ConsumerStatefulWidget {
   const ReportsScreen({super.key});
@@ -247,6 +248,17 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
     } else if (isMedical) {
       cardTitleText = 'Medical Records Report Generator';
       cardSubtitleText = 'Select medical report category, target filters, and output format.';
+    }
+
+    if (isPrincipal || role == 'admin') {
+      return ResponsiveLayout(
+        title: 'Executive Institutional Reports - RAMS',
+        currentRoute: '/reports',
+        body: ExecutiveReportView(
+          principalName: user?.fullName ?? 'Tariq Alvi (Principal)',
+          isEmbeddedInDashboard: false,
+        ),
+      );
     }
 
     return ResponsiveLayout(

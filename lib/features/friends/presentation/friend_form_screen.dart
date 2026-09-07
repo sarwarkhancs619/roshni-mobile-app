@@ -2,17 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'dart:math';
-import 'dart:convert';
-import 'dart:typed_data';
-import 'dart:io';
-import 'package:flutter/foundation.dart';
-import 'package:file_picker/file_picker.dart';
 import '../../../core/theme/theme.dart';
 import '../../../core/localization/localization.dart';
+import '../../../core/utils/image_utils.dart';
 import '../models/friend.dart';
 import 'friends_provider.dart';
+import 'widgets/friend_photo_picker_sheet.dart';
 import '../../auth/presentation/auth_providers.dart';
 import '../../../core/services/supabase_db_service.dart';
+import '../../../core/storage/hive_storage.dart';
 
 class FriendFormScreen extends ConsumerStatefulWidget {
   final String? friendId;
@@ -39,6 +37,13 @@ class _FriendFormScreenState extends ConsumerState<FriendFormScreen> {
   late TextEditingController _emergencyPhoneController;
   late TextEditingController _medicalSummaryController;
 
+  // Individual Plan (IP / IEP) Controllers
+  late TextEditingController _baselineController;
+  late TextEditingController _iepGoalTitleController;
+  late TextEditingController _iepGoalObjectivesController;
+  late TextEditingController _iepGoalStrategiesController;
+  DateTime _iepTargetDate = DateTime.now().add(const Duration(days: 90));
+
   // Non-controller state fields
   DateTime _dob = DateTime(2000, 1, 1);
   DateTime _admissionDate = DateTime.now();
@@ -47,6 +52,7 @@ class _FriendFormScreenState extends ConsumerState<FriendFormScreen> {
   String _assignedWorkshop = 'bakery';
   String _assignedHouse = 'amin_house';
   String _status = 'active';
+  String _registrationNumber = '';
 
   bool _isEdit = false;
   bool _accessDenied = false;
@@ -70,9 +76,15 @@ class _FriendFormScreenState extends ConsumerState<FriendFormScreen> {
     _emergencyPhoneController = TextEditingController();
     _medicalSummaryController = TextEditingController();
 
+    // Initialize IP / IEP controllers
+    _baselineController = TextEditingController(text: 'Initial assessment indicates strong physical mobility and eagerness to learn vocational tasks.');
+    _iepGoalTitleController = TextEditingController(text: 'Vocational Skill Onboarding & Task Discipline');
+    _iepGoalObjectivesController = TextEditingController(text: 'Demonstrate basic tool handling and workshop discipline with minimal prompts.');
+    _iepGoalStrategiesController = TextEditingController(text: 'Pairing with peer mentor and step-by-step visual demonstration.');
+
     // Check auth details
     final user = ref.read(authProvider).user;
-    if (user == null || user.role != 'principal') {
+    if (user == null || (user.role != 'principal' && user.role != 'admin')) {
       _accessDenied = true;
     } else {
       if (user.role == 'workshop_staff') {
@@ -84,7 +96,7 @@ class _FriendFormScreenState extends ConsumerState<FriendFormScreen> {
 
     if (_isEdit) {
       // Find the existing friend and populate controllers safely
-      WidgetsBinding.instance.addPostFrameCallback((_) {
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
         final friends = ref.read(visibleFriendsProvider);
         final friendIndex = friends.indexWhere((f) => f.id == widget.friendId);
         if (friendIndex == -1) {
@@ -95,6 +107,7 @@ class _FriendFormScreenState extends ConsumerState<FriendFormScreen> {
         }
         final friend = friends[friendIndex];
         setState(() {
+          _registrationNumber = friend.registrationNumber;
           _nameController.text = friend.fullName;
           _photoController.text = friend.photoUrl;
           _cnicController.text = friend.cnicOrBForm ?? '';
@@ -116,6 +129,20 @@ class _FriendFormScreenState extends ConsumerState<FriendFormScreen> {
           _assignedHouse = friend.assignedHouseId;
           _status = friend.status;
         });
+
+        // Populate existing IEP if available
+        final iep = await SupabaseDbService.fetchIep(friend.id);
+        if (iep != null && mounted) {
+          setState(() {
+            _baselineController.text = iep['baseline'] ?? _baselineController.text;
+            final List<dynamic> goals = iep['iep_goals'] ?? [];
+            if (goals.isNotEmpty) {
+              _iepGoalTitleController.text = goals.first['title'] ?? '';
+              _iepGoalObjectivesController.text = goals.first['objectives'] ?? '';
+              _iepGoalStrategiesController.text = goals.first['strategies'] ?? '';
+            }
+          });
+        }
       });
     }
   }
@@ -134,18 +161,25 @@ class _FriendFormScreenState extends ConsumerState<FriendFormScreen> {
     _emergencyRelationController.dispose();
     _emergencyPhoneController.dispose();
     _medicalSummaryController.dispose();
+    _baselineController.dispose();
+    _iepGoalTitleController.dispose();
+    _iepGoalObjectivesController.dispose();
+    _iepGoalStrategiesController.dispose();
     super.dispose();
   }
 
-  void _saveForm() {
+  Future<void> _saveForm() async {
     if (_formKey.currentState!.validate()) {
       final regId = _isEdit 
           ? widget.friendId! 
           : 'RAMS-2026-${(1000 + Random().nextInt(9000))}';
+      final regNumber = _isEdit && _registrationNumber.isNotEmpty
+          ? _registrationNumber
+          : regId;
 
       final friend = Friend(
         id: regId,
-        registrationNumber: regId,
+        registrationNumber: regNumber,
         fullName: _nameController.text,
         photoUrl: _photoController.text,
         dateOfBirth: _dob,
@@ -168,12 +202,63 @@ class _FriendFormScreenState extends ConsumerState<FriendFormScreen> {
       );
 
       if (_isEdit) {
-        ref.read(friendsProvider.notifier).updateFriend(friend);
+        await ref.read(friendsProvider.notifier).updateFriend(friend);
       } else {
-        ref.read(friendsProvider.notifier).addFriend(friend);
+        await ref.read(friendsProvider.notifier).addFriend(friend);
       }
 
-      context.pop();
+      // Save Individual Plan (IP / IEP)
+      final baselineText = _baselineController.text.trim();
+      final goalTitle = _iepGoalTitleController.text.trim();
+      if (baselineText.isNotEmpty || goalTitle.isNotEmpty) {
+        final baseline = baselineText.isNotEmpty ? baselineText : 'Initial developmental evaluation.';
+        final iepId = await SupabaseDbService.getOrCreateIep(friend.id, baseline);
+
+        final newGoal = {
+          'id': DateTime.now().millisecondsSinceEpoch.toString(),
+          'title': goalTitle.isNotEmpty ? goalTitle : 'Vocational & Social Integration',
+          'objectives': _iepGoalObjectivesController.text.trim().isNotEmpty 
+              ? _iepGoalObjectivesController.text.trim() 
+              : 'Active engagement in assigned workshop tasks.',
+          'strategies': _iepGoalStrategiesController.text.trim().isNotEmpty 
+              ? _iepGoalStrategiesController.text.trim() 
+              : 'Task sequencing with visual cues.',
+          'target_date': _iepTargetDate.toIso8601String().split('T')[0],
+          'progress_percentage': 0,
+          'status': 'in_progress',
+        };
+
+        if (iepId.isNotEmpty && goalTitle.isNotEmpty) {
+          await SupabaseDbService.saveIepGoal(
+            iepId,
+            newGoal['title'] as String,
+            newGoal['objectives'] as String,
+            newGoal['strategies'] as String,
+            newGoal['target_date'] as String,
+          );
+        }
+
+        // Cache locally in Hive
+        final iepBox = HiveStorage.getBox(HiveStorage.iepBoxName);
+        await iepBox.put(friend.id, {
+          'id': iepId.isNotEmpty ? iepId : 'local_iep_${friend.id}',
+          'friend_id': friend.id,
+          'baseline': baseline,
+          'iep_goals': [newGoal],
+        });
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(_isEdit 
+                ? 'Friend profile updated successfully.' 
+                : 'Friend and Individual Plan (IP) created successfully.'),
+            backgroundColor: AppTheme.successColor,
+          ),
+        );
+        context.pop();
+      }
     }
   }
 
@@ -246,13 +331,18 @@ class _FriendFormScreenState extends ConsumerState<FriendFormScreen> {
             Center(
               child: Stack(
                 children: [
-                  CircleAvatar(
-                    radius: 64,
-                    backgroundColor: AppTheme.primaryColor.withOpacity(0.1),
-                    backgroundImage: NetworkImage(_photoController.text),
-                    onBackgroundImageError: (_, __) {
-                      // Fallback icon if image fails to load
-                    },
+                  GestureDetector(
+                    onTap: _openPhotoPicker,
+                    child: CircleAvatar(
+                      key: ValueKey('form_avatar_${_photoController.text}'),
+                      radius: 64,
+                      backgroundColor: AppTheme.primaryColor.withOpacity(0.1),
+                      backgroundImage: getAppImageProvider(_photoController.text),
+                      onBackgroundImageError: (_, __) {},
+                      child: getAppImageProvider(_photoController.text) == null
+                          ? const Icon(Icons.person, size: 64, color: Colors.grey)
+                          : null,
+                    ),
                   ),
                   Positioned(
                     bottom: 0,
@@ -262,9 +352,7 @@ class _FriendFormScreenState extends ConsumerState<FriendFormScreen> {
                       radius: 20,
                       child: IconButton(
                         icon: const Icon(Icons.camera_alt, color: Colors.white, size: 18),
-                        onPressed: () {
-                          _showImageSourceBottomSheet(context);
-                        },
+                        onPressed: _openPhotoPicker,
                       ),
                     ),
                   ),
@@ -274,7 +362,7 @@ class _FriendFormScreenState extends ConsumerState<FriendFormScreen> {
             const SizedBox(height: 8),
             Center(
               child: TextButton.icon(
-                onPressed: () => _showImageSourceBottomSheet(context),
+                onPressed: _openPhotoPicker,
                 icon: const Icon(Icons.edit_rounded, size: 18),
                 label: const Text('Update Profile Picture'),
               ),
@@ -496,11 +584,120 @@ class _FriendFormScreenState extends ConsumerState<FriendFormScreen> {
                 labelText: 'Critical medical alerts, allergies, or cognitive notes...',
               ),
             ),
+            const SizedBox(height: 24),
+
+            // Individual Plan (IP / IEP) Setup Section
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF0F7FF),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFBBDEFB)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.school, color: AppTheme.primaryColor),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Individual Plan (IP / IEP) Setup',
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: AppTheme.primaryColor,
+                            ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Setup the initial developmental baseline and first vocational goal for this beneficiary:',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFFCBD5E1) : Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Baseline
+                  TextFormField(
+                    controller: _baselineController,
+                    maxLines: 3,
+                    decoration: const InputDecoration(
+                      labelText: 'Developmental Baseline Notes',
+                      hintText: 'Describe physical, behavioral, and sensory baseline...',
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Initial Goal Title
+                  TextFormField(
+                    controller: _iepGoalTitleController,
+                    decoration: const InputDecoration(
+                      labelText: 'Initial IP Goal Title',
+                      hintText: 'e.g., Tool handling and workshop safety',
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Objectives
+                  TextFormField(
+                    controller: _iepGoalObjectivesController,
+                    decoration: const InputDecoration(
+                      labelText: 'Goal Objectives',
+                      hintText: 'e.g., Complete daily routine tasks with minimal assistance',
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Strategies
+                  TextFormField(
+                    controller: _iepGoalStrategiesController,
+                    decoration: const InputDecoration(
+                      labelText: 'Strategies & Support',
+                      hintText: 'e.g., Pair with peer mentor, use step-by-step visual cards',
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Target Date
+                  ListTile(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      side: BorderSide(
+                        color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF475569) : Colors.grey.shade300,
+                      ),
+                    ),
+                    leading: Icon(
+                      Icons.calendar_month,
+                      color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF60A5FA) : AppTheme.primaryColor,
+                    ),
+                    title: const Text('Target Completion Date', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                    subtitle: Text('${_iepTargetDate.day}/${_iepTargetDate.month}/${_iepTargetDate.year}'),
+                    trailing: const Icon(Icons.arrow_drop_down),
+                    onTap: () async {
+                      final picked = await showDatePicker(
+                        context: context,
+                        initialDate: _iepTargetDate,
+                        firstDate: DateTime.now(),
+                        lastDate: DateTime.now().add(const Duration(days: 730)),
+                      );
+                      if (picked != null) {
+                        setState(() {
+                          _iepTargetDate = picked;
+                        });
+                      }
+                    },
+                  ),
+                ],
+              ),
+            ),
             const SizedBox(height: 32),
 
             ElevatedButton(
               onPressed: _saveForm,
-              child: Text(_isEdit ? 'Save Changes' : 'Register Friend Profile'),
+              child: Text(_isEdit ? 'Save Changes' : 'Register Friend Profile & IP'),
             ),
           ],
         ),
@@ -508,267 +705,34 @@ class _FriendFormScreenState extends ConsumerState<FriendFormScreen> {
     );
   }
 
-  void _showImageSourceBottomSheet(BuildContext context) {
-    showModalBottomSheet(
+  void _openPhotoPicker() {
+    showFriendPhotoPickerSheet(
       context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) {
-        final presets = [
-          'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150',
-          'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150',
-          'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150',
-          'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150',
-          'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=150',
-          'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
-          'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150',
-          'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150',
-        ];
+      currentPhotoUrl: _photoController.text,
+      onPhotoSelected: (newUrl) async {
+        setState(() {
+          _photoController.text = newUrl;
+        });
 
-        return SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Update Profile Picture',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    _buildSourceTile(
-                      icon: Icons.camera_alt_rounded,
-                      label: 'Take Photo',
-                      onTap: () {
-                        Navigator.pop(context);
-                        _startImageUpload('Camera');
-                      },
-                    ),
-                    _buildSourceTile(
-                      icon: Icons.photo_library_rounded,
-                      label: 'From Gallery',
-                      onTap: () {
-                        Navigator.pop(context);
-                        _startImageUpload('Gallery');
-                      },
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                const Text(
-                  'Select Preset Avatar',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                ),
-                const SizedBox(height: 12),
-                SizedBox(
-                  height: 70,
-                  child: ListView.builder(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: presets.length,
-                    itemBuilder: (context, index) {
-                      final isSelected = _photoController.text == presets[index];
-                      return GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            _photoController.text = presets[index];
-                          });
-                          Navigator.pop(context);
-                        },
-                        child: Container(
-                          margin: const EdgeInsets.only(right: 12),
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: isSelected ? AppTheme.primaryColor : Colors.transparent,
-                              width: 3,
-                            ),
-                          ),
-                          child: CircleAvatar(
-                            radius: 30,
-                            backgroundImage: NetworkImage(presets[index]),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ],
+        // If editing an existing friend, save immediately to database and cache
+        if (_isEdit && widget.friendId != null) {
+          final allFriends = ref.read(friendsProvider);
+          final existingIdx = allFriends.indexWhere((f) => f.id == widget.friendId);
+          if (existingIdx != -1) {
+            final updated = allFriends[existingIdx].copyWith(photoUrl: newUrl);
+            await ref.read(friendsProvider.notifier).updateFriend(updated);
+          }
+        }
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Profile picture updated successfully!'),
+              backgroundColor: AppTheme.successColor,
             ),
-          ),
-        );
+          );
+        }
       },
     );
-  }
-
-  Widget _buildSourceTile({
-    required IconData icon,
-    required String label,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        width: 100,
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        decoration: BoxDecoration(
-          border: Border.all(color: Colors.grey.shade200),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Column(
-          children: [
-            Icon(icon, color: AppTheme.primaryColor, size: 28),
-            const SizedBox(height: 8),
-            Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Future<void> _startImageUpload(String source) async {
-    try {
-      final result = await FilePicker.pickFiles(
-        type: FileType.image,
-        allowMultiple: false,
-        withData: true,
-      );
-
-      if (result == null || result.files.isEmpty) {
-        return; // User cancelled
-      }
-
-      final file = result.files.first;
-      Uint8List? bytes;
-      if (kIsWeb) {
-        bytes = file.bytes;
-      } else if (file.path != null) {
-        bytes = await File(file.path!).readAsBytes();
-      }
-
-      if (bytes == null) {
-        throw Exception('Could not read file data');
-      }
-
-      // Show upload progress dialog
-      if (!mounted) return;
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) {
-          return StatefulBuilder(
-            builder: (context, setDialogState) {
-              double progress = 0.0;
-              String status = 'Preparing upload...';
-
-              void runUpload() async {
-                try {
-                  setDialogState(() {
-                    progress = 0.2;
-                    status = 'Reading image...';
-                  });
-                  await Future.delayed(const Duration(milliseconds: 300));
-
-                  setDialogState(() {
-                    progress = 0.5;
-                    status = 'Uploading to storage...';
-                  });
-
-                  String finalUrl;
-                  if (SupabaseDbService.isConfigured) {
-                    final uploadedUrl = await SupabaseDbService.uploadFile(
-                      'friend-photos',
-                      file.name,
-                      bytes!,
-                    );
-                    if (uploadedUrl != null) {
-                      finalUrl = uploadedUrl;
-                    } else {
-                      final base64String = base64Encode(bytes!);
-                      finalUrl = 'data:image/png;base64,$base64String';
-                    }
-                  } else {
-                    final base64String = base64Encode(bytes!);
-                    finalUrl = 'data:image/png;base64,$base64String';
-                  }
-
-                  setDialogState(() {
-                    progress = 0.8;
-                    status = 'Caching image...';
-                  });
-                  await Future.delayed(const Duration(milliseconds: 300));
-
-                  setDialogState(() {
-                    progress = 1.0;
-                    status = 'Finished!';
-                  });
-                  await Future.delayed(const Duration(milliseconds: 200));
-
-                  setState(() {
-                    _photoController.text = finalUrl;
-                  });
-
-                  if (!context.mounted) return;
-                  if (Navigator.canPop(context)) {
-                    Navigator.pop(context);
-                  }
-
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Profile picture updated successfully!'),
-                      backgroundColor: AppTheme.successColor,
-                    ),
-                  );
-                } catch (e) {
-                  if (!context.mounted) return;
-                  if (Navigator.canPop(context)) {
-                    Navigator.pop(context);
-                  }
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Error uploading picture: $e'),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
-                }
-              }
-
-              // Start the upload sequence once dialog is built
-              Future.microtask(runUpload);
-
-              return AlertDialog(
-                title: const Text('Uploading Profile Picture'),
-                content: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(status),
-                    const SizedBox(height: 16),
-                    LinearProgressIndicator(
-                      value: progress,
-                      color: AppTheme.primaryColor,
-                      backgroundColor: Colors.grey.shade100,
-                    ),
-                    const SizedBox(height: 8),
-                    Text('${(progress * 100).toInt()}%'),
-                  ],
-                ),
-              );
-            },
-          );
-        },
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error selecting picture: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
   }
 }

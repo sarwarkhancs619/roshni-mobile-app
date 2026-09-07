@@ -44,7 +44,9 @@ class SettingsScreen extends ConsumerWidget {
                     radius: 32,
                     backgroundColor: AppTheme.primaryColor,
                     child: Text(
-                      authState.user?.fullName.characters.first.toUpperCase() ?? 'U',
+                      (authState.user?.cleanFullName.isNotEmpty == true)
+                          ? authState.user!.cleanFullName.characters.first.toUpperCase()
+                          : 'U',
                       style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
                     ),
                   ),
@@ -54,7 +56,7 @@ class SettingsScreen extends ConsumerWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          authState.user?.fullName ?? 'User Name',
+                          authState.user?.displayNameWithRole ?? authState.user?.fullName ?? 'User Name',
                           style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(height: 4),

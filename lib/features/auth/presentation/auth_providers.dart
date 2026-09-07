@@ -30,7 +30,62 @@ class AuthState {
 }
 
 class AuthNotifier extends StateNotifier<AuthState> {
-  AuthNotifier() : super(AuthState());
+  AuthNotifier() : super(AuthState()) {
+    _restoreSession();
+  }
+
+  static const Set<String> _demoEmails = {
+    'principal@roshni.org',
+    'bakery@roshni.org',
+    'woodwork@roshni.org',
+    'textile@roshni.org',
+    'house@roshni.org',
+    'physio@roshni.org',
+    'speech@roshni.org',
+    'medical@roshni.org',
+    'art@roshni.org',
+  };
+
+  void _purgeDemoUsers() {
+    try {
+      final usersBox = Hive.box('users');
+      for (final email in _demoEmails) {
+        if (usersBox.containsKey(email)) {
+          usersBox.delete(email);
+        }
+      }
+    } catch (_) {}
+  }
+
+  void _restoreSession() {
+    _purgeDemoUsers();
+    try {
+      final usersBox = Hive.box('users');
+      final data = usersBox.get('current_session_user');
+      if (data != null && data is Map) {
+        final Map<String, dynamic> m = Map<String, dynamic>.from(data);
+        final restoredEmail = m['email']?.toString().toLowerCase() ?? '';
+        if (_demoEmails.contains(restoredEmail)) {
+          usersBox.delete('current_session_user');
+          return;
+        }
+        String restoredName = m['fullName']?.toString() ?? 'User';
+        if (restoredName.toLowerCase() == 'principal' &&
+            (restoredEmail == 'sarwarkhanceh619@gmail.com' || restoredEmail == 'sarwarkhancs619@gmail.com')) {
+          restoredName = 'Sarwar Khan';
+        }
+        final restored = AppUser(
+          uid: m['uid']?.toString() ?? 'session_uid',
+          email: m['email']?.toString() ?? '',
+          fullName: restoredName,
+          role: m['role']?.toString() ?? 'principal',
+          workshopId: m['workshopId']?.toString(),
+          isActive: m['isActive'] ?? true,
+        );
+        state = AuthState(user: restored);
+      }
+    } catch (_) {}
+  }
 
   bool get _isSupabaseConfigured {
     try {
@@ -42,10 +97,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   Future<bool> login(String email, String password) async {
-    state = state.copyWith(isLoading: true);
+    state = state.copyWith(isLoading: true, errorMessage: null);
     
     final normalizedEmail = email.trim().toLowerCase();
     AppUser? loggedInUser;
+    String? failureReason;
 
     // 1. Try Supabase Auth
     if (_isSupabaseConfigured) {
@@ -71,126 +127,67 @@ class AuthNotifier extends StateNotifier<AuthState> {
               isActive: profile['is_active'] ?? true,
             );
           } else {
-            // Default user fallback if profile row not created yet
+            // Read from auth user metadata if profile row query returned null
+            final meta = res.user!.userMetadata ?? {};
+            final fallbackRole = meta['role']?.toString() ?? 'principal';
+            final fallbackWorkshop = meta['workshop_id']?.toString();
             loggedInUser = AppUser(
               uid: res.user!.id,
               email: res.user!.email ?? email,
-              fullName: 'Supabase User',
-              role: 'workshop_staff',
-              workshopId: 'bakery',
+              fullName: meta['full_name']?.toString() ?? 'Staff User',
+              role: fallbackRole,
+              workshopId: fallbackWorkshop,
               isActive: true,
             );
           }
         }
+      } on AuthException catch (e) {
+        debugPrint('Supabase AuthException: ${e.message}');
+        failureReason = e.message;
       } catch (e) {
-        debugPrint('Supabase sign-in failed, trying local offline fallback: $e');
+        debugPrint('Supabase sign-in general error: $e');
+        failureReason = e.toString();
       }
     }
     
-    // 2. Local fallback mock logins
-    if (loggedInUser == null) {
-      dynamic storedUser;
-      try {
-        final usersBox = Hive.box('users');
-        storedUser = usersBox.get(normalizedEmail);
-      } catch (_) {
-        // Safe fallback for unit tests where Hive boxes are not pre-opened
-      }
-      if (storedUser != null) {
-        final Map<String, dynamic> userData = Map<String, dynamic>.from(storedUser);
+    // 2. Offline fallback ONLY if Supabase is not reachable (failureReason is null)
+    // Never bypass wrong password if Supabase responded with AuthException
+    if (loggedInUser == null && failureReason == null) {
+      if ((normalizedEmail == 'sarwarkhancs619@gmail.com' || normalizedEmail == 'admin@roshni.org') &&
+          password == 'password123') {
+        // Real Admin fallback for unit testing / offline
         loggedInUser = AppUser(
-          uid: userData['uid'] ?? 'custom_uid',
-          email: userData['email'] ?? email,
-          fullName: userData['fullName'] ?? 'Custom User',
-          role: userData['role'] ?? 'workshop_staff',
-          workshopId: userData['workshopId'],
-          isActive: userData['isActive'] ?? true,
-        );
-      } else if (normalizedEmail == 'principal@roshni.org') {
-        loggedInUser = AppUser(
-          uid: 'principal_uid',
-          email: email,
-          fullName: 'Tariq Alvi (Principal)',
-          role: 'principal',
-          isActive: true,
-        );
-      } else if (normalizedEmail == 'admin@roshni.org') {
-        loggedInUser = AppUser(
-          uid: 'admin_uid',
-          email: email,
-          fullName: 'Zahid Khan (Admin)',
+          uid: '6631cfd8-0cdd-4041-b02a-44793cb909aa',
+          email: normalizedEmail,
+          fullName: 'Sarwar Khan (Admin)',
           role: 'admin',
-          isActive: true,
-        );
-      } else if (normalizedEmail == 'bakery@roshni.org') {
-        loggedInUser = AppUser(
-          uid: 'bakery_staff_uid',
-          email: email,
-          fullName: 'Fatima Ali (Bakery Staff)',
-          role: 'workshop_staff',
-          workshopId: 'bakery',
-          isActive: true,
-        );
-      } else if (normalizedEmail == 'woodwork@roshni.org') {
-        loggedInUser = AppUser(
-          uid: 'woodwork_staff_uid',
-          email: email,
-          fullName: 'Muhammad Ahmad (Woodwork Staff)',
-          role: 'workshop_staff',
-          workshopId: 'woodwork',
-          isActive: true,
-        );
-      } else if (normalizedEmail == 'textile@roshni.org') {
-        loggedInUser = AppUser(
-          uid: 'textile_staff_uid',
-          email: email,
-          fullName: 'Sobia Imran (Textile Staff)',
-          role: 'workshop_staff',
-          workshopId: 'textile',
-          isActive: true,
-        );
-      } else if (normalizedEmail == 'house@roshni.org') {
-        loggedInUser = AppUser(
-          uid: 'house_staff_uid',
-          email: email,
-          fullName: 'Asia Bibi (House Mother)',
-          role: 'house_staff',
-          workshopId: 'amin_house',
-          isActive: true,
-        );
-      } else if (normalizedEmail == 'physio@roshni.org') {
-        loggedInUser = AppUser(
-          uid: 'physio_uid',
-          email: email,
-          fullName: 'Dr. Sarah Smith (Physiotherapist)',
-          role: 'physiotherapist',
-          isActive: true,
-        );
-      } else if (normalizedEmail == 'speech@roshni.org') {
-        loggedInUser = AppUser(
-          uid: 'speech_uid',
-          email: email,
-          fullName: 'Amina Shah (Speech Therapist)',
-          role: 'speech_therapist',
-          isActive: true,
-        );
-      } else if (normalizedEmail == 'medical@roshni.org') {
-        loggedInUser = AppUser(
-          uid: 'medical_uid',
-          email: email,
-          fullName: 'Dr. Usman Ahmed (Medical Officer)',
-          role: 'medical_officer',
           isActive: true,
         );
       }
     }
 
     if (loggedInUser != null) {
-      state = AuthState(user: loggedInUser);
+      state = AuthState(user: loggedInUser, isLoading: false, errorMessage: null);
+      try {
+        final usersBox = Hive.box('users');
+        usersBox.put('current_session_user', {
+          'uid': loggedInUser.uid,
+          'email': loggedInUser.email,
+          'fullName': loggedInUser.fullName,
+          'role': loggedInUser.role,
+          'workshopId': loggedInUser.workshopId,
+          'isActive': loggedInUser.isActive,
+        });
+      } catch (_) {}
       return true;
     } else {
+      final finalError = (failureReason != null && failureReason.isNotEmpty)
+          ? failureReason
+          : 'Invalid email or password. Please check your credentials.';
       state = AuthState(
-        errorMessage: 'Invalid username or password. Try admin@roshni.org, bakery@roshni.org, or your Supabase credentials.',
+        user: null,
+        isLoading: false,
+        errorMessage: finalError,
       );
       return false;
     }
@@ -225,19 +222,25 @@ class AuthNotifier extends StateNotifier<AuthState> {
         final AuthResponse res = await tempClient.auth.signUp(
           email: normalizedEmail,
           password: password,
+          data: {
+            'full_name': fullName,
+            'role': role,
+            'workshop_id': workshopId,
+          },
         );
         
         if (res.user != null) {
           userId = res.user!.id;
           
           // Write the profile metadata directly into public.profiles
-          await Supabase.instance.client.from('profiles').insert({
+          await Supabase.instance.client.from('profiles').upsert({
             'id': userId,
             'email': normalizedEmail,
             'full_name': fullName,
             'role': role,
             'workshop_id': workshopId,
             'is_active': true,
+            'updated_at': DateTime.now().toIso8601String(),
           });
         } else {
           throw Exception("Auth user creation failed");
@@ -253,8 +256,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
         'isActive': true,
       };
       
-      final usersBox = Hive.box('users');
-      await usersBox.put(normalizedEmail, newUserMap);
+      try {
+        final usersBox = Hive.box('users');
+        await usersBox.put(normalizedEmail, newUserMap);
+      } catch (_) {}
       
       state = state.copyWith(isLoading: false);
       return true;
@@ -268,12 +273,40 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
+  Future<bool> deleteUser(String uid, String email) async {
+    try {
+      final normalizedEmail = email.trim().toLowerCase();
+      if (_isSupabaseConfigured) {
+        try {
+          await Supabase.instance.client.rpc('delete_user_by_admin', params: {
+            'target_user_id': uid,
+          });
+        } catch (e) {
+          debugPrint('RPC delete_user_by_admin error: $e. Falling back to profiles delete.');
+          await Supabase.instance.client.from('profiles').delete().eq('id', uid);
+        }
+      }
+      try {
+        final usersBox = Hive.box('users');
+        await usersBox.delete(normalizedEmail);
+      } catch (_) {}
+      return true;
+    } catch (e) {
+      debugPrint('Error deleting user: $e');
+      return false;
+    }
+  }
+
   void logout() {
     if (_isSupabaseConfigured) {
       Supabase.instance.client.auth.signOut().catchError((e) {
         debugPrint('Supabase sign-out warning: $e');
       });
     }
+    try {
+      final usersBox = Hive.box('users');
+      usersBox.delete('current_session_user');
+    } catch (_) {}
     state = AuthState();
   }
 }

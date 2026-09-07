@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/painting.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/friend.dart';
@@ -17,6 +18,7 @@ class FriendsNotifier extends StateNotifier<List<Friend>> {
 
   Map<String, dynamic> _toDbMap(Friend friend) {
     return {
+      'id': friend.id,
       'registration_number': friend.registrationNumber,
       'full_name': friend.fullName,
       'photo_url': friend.photoUrl,
@@ -37,219 +39,135 @@ class FriendsNotifier extends StateNotifier<List<Friend>> {
       'emergency_relation': friend.emergencyRelation,
       'emergency_phone': friend.emergencyPhone,
       'medical_notes_summary': friend.medicalNotesSummary,
+      'updated_at': DateTime.now().toUtc().toIso8601String(),
     };
   }
 
   Friend _fromDbMap(Map<String, dynamic> json) {
     return Friend(
-      id: json['id'] ?? '',
-      registrationNumber: json['registration_number'] ?? '',
-      fullName: json['full_name'] ?? '',
-      photoUrl: json['photo_url'] ?? '',
-      dateOfBirth: json['date_of_birth'] != null ? DateTime.parse(json['date_of_birth']) : DateTime.now(),
-      gender: json['gender'] ?? 'male',
-      bloodGroup: json['blood_group'] ?? 'A+',
-      cnicOrBForm: json['cnic_or_bform'],
-      admissionDate: json['admission_date'] != null ? DateTime.parse(json['admission_date']) : DateTime.now(),
-      assignedWorkshopId: json['assigned_workshop_id'] ?? 'bakery',
-      assignedHouseId: json['assigned_house_id'] ?? 'amin_house',
-      status: json['status'] ?? 'active',
-      guardianName: json['guardian_name'] ?? '',
-      guardianRelation: json['guardian_relation'] ?? '',
-      guardianPhone: json['guardian_phone'] ?? '',
-      guardianEmail: json['guardian_email'] ?? '',
-      guardianAddress: json['guardian_address'] ?? '',
-      emergencyName: json['emergency_name'] ?? '',
-      emergencyRelation: json['emergency_relation'] ?? '',
-      emergencyPhone: json['emergency_phone'] ?? '',
-      medicalNotesSummary: json['medical_notes_summary'] ?? '',
+      id: json['id']?.toString() ?? '',
+      registrationNumber: json['registration_number']?.toString() ?? '',
+      fullName: json['full_name']?.toString() ?? '',
+      photoUrl: json['photo_url']?.toString() ?? '',
+      dateOfBirth: json['date_of_birth'] != null ? (DateTime.tryParse(json['date_of_birth'].toString()) ?? DateTime.now()) : DateTime.now(),
+      gender: json['gender']?.toString() ?? 'male',
+      bloodGroup: json['blood_group']?.toString() ?? 'A+',
+      cnicOrBForm: json['cnic_or_bform']?.toString(),
+      admissionDate: json['admission_date'] != null ? (DateTime.tryParse(json['admission_date'].toString()) ?? DateTime.now()) : DateTime.now(),
+      assignedWorkshopId: json['assigned_workshop_id']?.toString() ?? 'bakery',
+      assignedHouseId: json['assigned_house_id']?.toString() ?? 'amin_house',
+      status: json['status']?.toString() ?? 'active',
+      guardianName: json['guardian_name']?.toString() ?? '',
+      guardianRelation: json['guardian_relation']?.toString() ?? '',
+      guardianPhone: json['guardian_phone']?.toString() ?? '',
+      guardianEmail: json['guardian_email']?.toString() ?? '',
+      guardianAddress: json['guardian_address']?.toString() ?? '',
+      emergencyName: json['emergency_name']?.toString() ?? '',
+      emergencyRelation: json['emergency_relation']?.toString() ?? '',
+      emergencyPhone: json['emergency_phone']?.toString() ?? '',
+      medicalNotesSummary: json['medical_notes_summary']?.toString() ?? '',
     );
   }
 
+  static const Set<String> _fakeFriendIds = {
+    'friend_ali_khan',
+    'friend_fatima_noor',
+    'friend_usman_tariq',
+    'friend_zainab_bibi',
+    'friend_bilal_ahmed',
+    '00000000-0000-0000-0000-000000000001',
+    '00000000-0000-0000-0000-000000000002',
+    '00000000-0000-0000-0000-000000000003',
+    '00000000-0000-0000-0000-000000000004',
+    '00000000-0000-0000-0000-000000000005',
+  };
+
+  static bool _isFakeFriend(Friend f) {
+    final name = f.fullName.trim().toLowerCase();
+    return name == 'ali khan' ||
+        name == 'fatima noor' ||
+        name == 'usman tariq' ||
+        name == 'zainab bibi' ||
+        name == 'bilal ahmed' ||
+        name == 'zainab fatima' ||
+        name == 'ali raza' ||
+        name == 'ayesha bibi' ||
+        name == 'bilal mustafa';
+  }
+
+  static List<Friend> getDefaultFriends() {
+    return [];
+  }
+
+  Future<void> seedDefaultFriends() async {
+    // No-op to avoid seeding fake friends
+  }
+
   Future<void> _loadFriends() async {
-    final box = HiveStorage.getBox(HiveStorage.friendsBoxName);
-    
-    // Load local friends first so UI renders immediately
-    final localFriends = box.values
-        .map((item) => Friend.fromJson(Map<String, dynamic>.from(item)))
-        .toList();
-    state = localFriends;
-    
-    // Attempt Supabase Fetch & Sync
-    if (_isSupabaseConfigured) {
-      try {
-        final List<dynamic> data = await _client.from('friends').select();
-        final remoteFriends = data.map((json) => _fromDbMap(json)).toList();
-        
-        final Map<String, Friend> merged = {};
-        for (var f in remoteFriends) {
-          merged[f.id] = f;
-        }
-        for (var f in localFriends) {
-          if (!merged.containsKey(f.id)) {
-            merged[f.id] = f;
-            // Async upload local friend to Supabase so it's not lost
-            _client.from('friends').insert(_toDbMap(f)).catchError((e) {
-              debugPrint('Failed to auto-sync local friend ${f.fullName}: $e');
-            });
-          }
-        }
+    try {
+      final box = HiveStorage.getBox(HiveStorage.friendsBoxName);
 
-        final finalFriends = merged.values.toList();
-        state = finalFriends;
-        
-        // Update Hive cache
-        await box.clear();
-        for (var f in finalFriends) {
-          await box.put(f.id, f.toJson());
+      // Purge any fake friends from local Hive storage immediately
+      for (final fakeId in _fakeFriendIds) {
+        if (box.containsKey(fakeId)) {
+          await box.delete(fakeId);
         }
-        debugPrint('Friends loaded and synced with Supabase.');
-        return;
-      } catch (e) {
-        debugPrint('Supabase fetch failed, falling back to Hive cache: $e');
       }
-    }
 
-    if (box.isEmpty) {
-      // Seed initial dummy data for development
-      final initialFriends = [
-        Friend(
-          id: '00000000-0000-0000-0000-000000000001',
-          registrationNumber: 'RAMS-2026-0001',
-          fullName: 'Zainab Fatima',
-          photoUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150',
-          dateOfBirth: DateTime(2004, 3, 14),
-          gender: 'female',
-          bloodGroup: 'O+',
-          cnicOrBForm: '35201-1234567-8',
-          admissionDate: DateTime(2023, 1, 10),
-          assignedWorkshopId: 'bakery',
-          assignedHouseId: 'amin_house',
-          status: 'active',
-          guardianName: 'Imran Fatima',
-          guardianRelation: 'Father',
-          guardianPhone: '0300-1234567',
-          guardianEmail: 'imran@example.com',
-          guardianAddress: 'Model Town, Lahore',
-          emergencyName: 'Imran Fatima',
-          emergencyRelation: 'Father',
-          emergencyPhone: '0300-1234567',
-          medicalNotesSummary: 'Mild developmental delay. Requires supervision during baking mixing processes. No allergies.',
-        ),
-        Friend(
-          id: '00000000-0000-0000-0000-000000000002',
-          registrationNumber: 'RAMS-2026-0002',
-          fullName: 'Ali Raza',
-          photoUrl: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150',
-          dateOfBirth: DateTime(2001, 8, 22),
-          gender: 'male',
-          bloodGroup: 'B+',
-          cnicOrBForm: '35202-8765432-1',
-          admissionDate: DateTime(2022, 6, 15),
-          assignedWorkshopId: 'woodwork',
-          assignedHouseId: 'roshni_house',
-          status: 'active',
-          guardianName: 'Muhammad Raza',
-          guardianRelation: 'Father',
-          guardianPhone: '0321-7654321',
-          guardianEmail: 'raza@example.com',
-          guardianAddress: 'Johar Town, Lahore',
-          emergencyName: 'Khadija Bibi',
-          emergencyRelation: 'Mother',
-          emergencyPhone: '0322-1122334',
-          medicalNotesSummary: 'Down Syndrome. Highly active, loves woodwork. Prefers assembling and carving tasks. Monitor hydration.',
-        ),
-        Friend(
-          id: '00000000-0000-0000-0000-000000000003',
-          registrationNumber: 'RAMS-2026-0003',
-          fullName: 'Usman Tariq',
-          photoUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150',
-          dateOfBirth: DateTime(1998, 11, 5),
-          gender: 'male',
-          bloodGroup: 'A-',
-          cnicOrBForm: '35201-9988776-5',
-          admissionDate: DateTime(2021, 9, 1),
-          assignedWorkshopId: 'farming',
-          assignedHouseId: 'amin_house',
-          status: 'active',
-          guardianName: 'Tariq Mahmood',
-          guardianRelation: 'Father',
-          guardianPhone: '0333-4455667',
-          guardianEmail: 'tariq@example.com',
-          guardianAddress: 'Gulberg, Lahore',
-          emergencyName: 'Tariq Mahmood',
-          emergencyRelation: 'Father',
-          emergencyPhone: '0333-4455667',
-          medicalNotesSummary: 'Autism spectrum. Sensitive to loud noises. Enjoys farming/composting activities.',
-        ),
-        Friend(
-          id: '00000000-0000-0000-0000-000000000004',
-          registrationNumber: 'RAMS-2026-0004',
-          fullName: 'Ayesha Bibi',
-          photoUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150',
-          dateOfBirth: DateTime(2002, 5, 30),
-          gender: 'female',
-          bloodGroup: 'AB+',
-          cnicOrBForm: '35201-5544332-9',
-          admissionDate: DateTime(2024, 2, 20),
-          assignedWorkshopId: 'textile',
-          assignedHouseId: 'roshni_house',
-          status: 'active',
-          guardianName: 'Zubaida Bibi',
-          guardianRelation: 'Mother',
-          guardianPhone: '0312-9988776',
-          guardianEmail: 'zubaida@example.com',
-          guardianAddress: 'Faisal Town, Lahore',
-          emergencyName: 'Sajid Ali',
-          emergencyRelation: 'Brother',
-          emergencyPhone: '0315-6677889',
-          medicalNotesSummary: 'Speech impairment, mild cognitive delay. Excellent focus in stitching and thread cutting.',
-        ),
-        Friend(
-          id: '00000000-0000-0000-0000-000000000005',
-          registrationNumber: 'RAMS-2026-0005',
-          fullName: 'Bilal Mustafa',
-          photoUrl: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=150',
-          dateOfBirth: DateTime(2005, 1, 19),
-          gender: 'male',
-          bloodGroup: 'O-',
-          cnicOrBForm: '35203-1122334-5',
-          admissionDate: DateTime(2025, 4, 1),
-          assignedWorkshopId: 'artwork',
-          assignedHouseId: 'roshni_house',
-          status: 'active',
-          guardianName: 'Mustafa Qureshi',
-          guardianRelation: 'Father',
-          guardianPhone: '0300-8889990',
-          guardianEmail: 'mustafa@example.com',
-          guardianAddress: 'DHA Phase 5, Lahore',
-          emergencyName: 'Mustafa Qureshi',
-          emergencyRelation: 'Father',
-          emergencyPhone: '0300-8889990',
-          medicalNotesSummary: 'ADHD and cognitive challenge. Highly creative in painting. Requires calming environments.',
-        ),
-      ];
-
-      for (var f in initialFriends) {
-        box.put(f.id, f.toJson());
-      }
-      state = initialFriends;
-    } else {
-      state = box.values
+      // Load local friends from cache (excluding any fake ones)
+      final localFriends = box.values
           .map((item) => Friend.fromJson(Map<String, dynamic>.from(item)))
+          .where((f) => !_fakeFriendIds.contains(f.id) && !_isFakeFriend(f))
           .toList();
+
+      state = localFriends;
+      
+      // Attempt Supabase Fetch - Supabase is the single source of truth!
+      if (_isSupabaseConfigured) {
+        try {
+          final List<dynamic> data = await _client
+              .from('friends')
+              .select()
+              .order('created_at', ascending: false)
+              .timeout(const Duration(seconds: 7));
+
+          final remoteFriends = data
+              .map((json) => _fromDbMap(Map<String, dynamic>.from(json)))
+              .where((f) => !_fakeFriendIds.contains(f.id) && !_isFakeFriend(f))
+              .toList();
+
+          // Clear local box and write only remote friends so deleted records never resurrect
+          await box.clear();
+          for (var f in remoteFriends) {
+            await box.put(f.id, f.toJson());
+          }
+
+          state = remoteFriends;
+          debugPrint('Friends loaded from Supabase: ${remoteFriends.length} friends.');
+          return;
+        } catch (e) {
+          debugPrint('Supabase fetch note: $e');
+        }
+      }
+    } catch (e) {
+      debugPrint('Error loading friends: $e');
     }
   }
 
   Future<void> addFriend(Friend friend) async {
-    final box = HiveStorage.getBox(HiveStorage.friendsBoxName);
-    await box.put(friend.id, friend.toJson());
+    try {
+      final box = HiveStorage.getBox(HiveStorage.friendsBoxName);
+      await box.put(friend.id, friend.toJson());
+    } catch (_) {}
     state = [...state, friend];
 
     if (_isSupabaseConfigured) {
       try {
-        await _client.from('friends').insert(_toDbMap(friend));
-        debugPrint('Friend added to Supabase.');
+        await _client
+            .from('friends')
+            .upsert(_toDbMap(friend))
+            .timeout(const Duration(seconds: 5));
+        debugPrint('Friend added/upserted to Supabase.');
       } catch (e) {
         debugPrint('Supabase add failed (saved locally only): $e');
       }
@@ -257,6 +175,9 @@ class FriendsNotifier extends StateNotifier<List<Friend>> {
   }
 
   Future<void> updateFriend(Friend friend) async {
+    PaintingBinding.instance.imageCache.clear();
+    PaintingBinding.instance.imageCache.clearLiveImages();
+
     final box = HiveStorage.getBox(HiveStorage.friendsBoxName);
     await box.put(friend.id, friend.toJson());
     state = [
@@ -266,7 +187,10 @@ class FriendsNotifier extends StateNotifier<List<Friend>> {
 
     if (_isSupabaseConfigured) {
       try {
-        await _client.from('friends').update(_toDbMap(friend)).eq('id', friend.id);
+        await _client
+            .from('friends')
+            .upsert(_toDbMap(friend))
+            .timeout(const Duration(seconds: 5));
         debugPrint('Friend updated in Supabase.');
       } catch (e) {
         debugPrint('Supabase update failed (saved locally only): $e');

@@ -213,6 +213,18 @@ class SupabaseDbService {
     }
   }
 
+  static Future<void> updateSpeechActivities(String assessmentId, List<String> activities) async {
+    if (!isConfigured) return;
+    try {
+      await _client.from('speech_assessments').update({
+        'activities': activities,
+        'updated_at': DateTime.now().toIso8601String(),
+      }).eq('id', assessmentId);
+    } catch (e) {
+      debugPrint('Error updating speech activities: $e');
+    }
+  }
+
   static Future<void> addSpeechSession(String assessmentId, String notes, String progress) async {
     if (!isConfigured) return;
     try {
@@ -223,6 +235,76 @@ class SupabaseDbService {
       });
     } catch (e) {
       debugPrint('Error adding speech session: $e');
+    }
+  }
+
+  static Future<void> updatePhysioExercises(String assessmentId, List<String> exercises) async {
+    if (!isConfigured) return;
+    try {
+      await _client.from('physiotherapy_assessments').update({
+        'exercises': exercises,
+        'updated_at': DateTime.now().toIso8601String(),
+      }).eq('id', assessmentId);
+    } catch (e) {
+      debugPrint('Error updating physio exercises: $e');
+    }
+  }
+
+  static Future<void> updateMedicalAllergiesAndVaccines(String friendId, List<String> allergies, List<String> vaccinations) async {
+    if (!isConfigured) return;
+    try {
+      final existing = await _client.from('medical_records').select('id').eq('friend_id', friendId).maybeSingle();
+      if (existing == null) {
+        await _client.from('medical_records').insert({
+          'friend_id': friendId,
+          'allergies': allergies,
+          'vaccinations': vaccinations,
+          'medical_history': 'Pending detailed history',
+          'clinical_notes': 'Initial medical record',
+        });
+      } else {
+        await _client.from('medical_records').update({
+          'allergies': allergies,
+          'vaccinations': vaccinations,
+          'updated_at': DateTime.now().toIso8601String(),
+        }).eq('friend_id', friendId);
+      }
+    } catch (e) {
+      debugPrint('Error updating allergies & vaccines: $e');
+    }
+  }
+
+  // --- BATCH FETCH ALL CLINICAL DATA FOR REAL OVERSIGHT ---
+  static Future<List<Map<String, dynamic>>> fetchAllPhysioAssessments() async {
+    if (!isConfigured) return [];
+    try {
+      final res = await _client.from('physiotherapy_assessments').select('*, physiotherapy_sessions(*)');
+      return List<Map<String, dynamic>>.from(res);
+    } catch (e) {
+      debugPrint('Error fetching all physio: $e');
+      return [];
+    }
+  }
+
+  static Future<List<Map<String, dynamic>>> fetchAllSpeechAssessments() async {
+    if (!isConfigured) return [];
+    try {
+      final res = await _client.from('speech_assessments').select('*, speech_sessions(*)');
+      return List<Map<String, dynamic>>.from(res);
+    } catch (e) {
+      debugPrint('Error fetching all speech: $e');
+      return [];
+    }
+  }
+
+  static Future<List<Map<String, dynamic>>> fetchAllMedicalRecords() async {
+    if (!isConfigured) return [];
+    try {
+      final res = await _client.from('medical_records').select('*, medical_vitals(*), medical_prescriptions(*)');
+      return List<Map<String, dynamic>>.from(res);
+    } catch (e) {
+      debugPrint('Error fetching all medical: $e');
+      return [];
     }
   }
 
@@ -312,7 +394,7 @@ class SupabaseDbService {
         fileName,
         bytes,
         fileOptions: FileOptions(contentType: mimeType, cacheControl: '3600'),
-      );
+      ).timeout(const Duration(seconds: 15));
       final String publicUrl = _client.storage.from(bucketName).getPublicUrl(fileName);
       return publicUrl;
     } catch (e) {
