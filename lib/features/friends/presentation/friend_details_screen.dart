@@ -179,7 +179,9 @@ class _FriendDetailsScreenState extends ConsumerState<FriendDetailsScreen> {
                         const SizedBox(height: 6),
                         Text('Reg No: ${friend.registrationNumber}'),
                         const SizedBox(height: 4),
-                        Row(
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 4,
                           children: [
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -198,7 +200,6 @@ class _FriendDetailsScreenState extends ConsumerState<FriendDetailsScreen> {
                                 ),
                               ),
                             ),
-                            const SizedBox(width: 10),
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                               decoration: BoxDecoration(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'app_drawer.dart';
+import '../../services/update_service.dart';
 import '../../../features/auth/presentation/auth_providers.dart';
 
 class ResponsiveLayout extends ConsumerWidget {
@@ -43,6 +44,8 @@ class ResponsiveLayout extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    UpdateService.checkOnLaunch(context);
+
     final double width = MediaQuery.of(context).size.width;
     final bool isLargeScreen = width >= 900;
     final authState = ref.watch(authProvider);
@@ -92,12 +95,17 @@ class ResponsiveLayout extends ConsumerWidget {
                       children: [
                         const Icon(Icons.person, size: 14, color: Colors.white),
                         const SizedBox(width: 5),
-                        Text(
-                          user.displayNameWithRole,
-                          style: const TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
+                        ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 160),
+                          child: Text(
+                            user.displayNameWithRole,
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                       ],

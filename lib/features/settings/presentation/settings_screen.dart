@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/shared/widgets/responsive_layout.dart';
 import '../../../core/theme/theme.dart';
 import '../../../core/localization/localization.dart';
+import '../../../core/config/app_config.dart';
+import '../../../core/services/update_service.dart';
 import '../../auth/presentation/auth_providers.dart';
 
 // Riverpod theme provider for dark/light state
@@ -121,20 +123,28 @@ class SettingsScreen extends ConsumerWidget {
           const SizedBox(height: 12),
           Card(
             child: Column(
-              children: const [
+              children: [
                 ListTile(
-                  leading: Icon(Icons.info_outline, color: AppTheme.primaryColor),
-                  title: Text('Application Version'),
-                  trailing: Text('1.0.0 (Build 1)', style: TextStyle(fontWeight: FontWeight.bold)),
+                  leading: const Icon(Icons.info_outline, color: AppTheme.primaryColor),
+                  title: const Text('Application Version'),
+                  subtitle: const Text('Check for newer builds and releases'),
+                  trailing: OutlinedButton.icon(
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    ),
+                    icon: const Icon(Icons.sync, size: 14),
+                    label: const Text('v${AppConfig.appVersion} (#${AppConfig.appBuildNumber})'),
+                    onPressed: () => UpdateService.checkForUpdates(context, isManualCheck: true),
+                  ),
                 ),
-                Divider(height: 1),
-                ListTile(
+                const Divider(height: 1),
+                const ListTile(
                   leading: Icon(Icons.security, color: AppTheme.primaryColor),
                   title: Text('Data Encryption Status'),
                   trailing: Text('Active (HTTPS/AES-256)', style: TextStyle(color: AppTheme.successColor, fontWeight: FontWeight.bold)),
                 ),
-                Divider(height: 1),
-                ListTile(
+                const Divider(height: 1),
+                const ListTile(
                   leading: Icon(Icons.cloud_sync, color: AppTheme.primaryColor),
                   title: Text('Local Database Sync'),
                   trailing: Text('In-Sync', style: TextStyle(color: AppTheme.successColor, fontWeight: FontWeight.bold)),

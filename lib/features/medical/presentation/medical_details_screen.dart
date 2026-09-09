@@ -733,29 +733,67 @@ class _MedicalDetailsScreenState extends ConsumerState<MedicalDetailsScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                const Row(
+                            LayoutBuilder(
+                              builder: (context, constraints) {
+                                final isNarrow = constraints.maxWidth < 500;
+                                final titleWidget = const Row(
                                   children: [
                                     Icon(Icons.warning_amber_rounded, color: AppTheme.errorColor),
                                     SizedBox(width: 8),
-                                    Text('Allergies & High-Priority Alerts', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppTheme.errorColor)),
-                                  ],
-                                ),
-                                if (canEditMedical)
-                                  OutlinedButton.icon(
-                                    icon: const Icon(Icons.add_alert, size: 14),
-                                    label: const Text('Add Alert', style: TextStyle(fontSize: 12)),
-                                    style: OutlinedButton.styleFrom(
-                                      foregroundColor: AppTheme.errorColor,
-                                      side: const BorderSide(color: AppTheme.errorColor),
-                                      visualDensity: VisualDensity.compact,
-                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                    Expanded(
+                                      child: Text(
+                                        'Allergies & High-Priority Alerts',
+                                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppTheme.errorColor),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
                                     ),
-                                    onPressed: _showAddAllergyDialog,
-                                  ),
-                              ],
+                                  ],
+                                );
+
+                                if (isNarrow) {
+                                  return Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      titleWidget,
+                                      if (canEditMedical) ...[
+                                        const SizedBox(height: 8),
+                                        OutlinedButton.icon(
+                                          icon: const Icon(Icons.add_alert, size: 14),
+                                          label: const Text('Add Alert', style: TextStyle(fontSize: 12)),
+                                          style: OutlinedButton.styleFrom(
+                                            foregroundColor: AppTheme.errorColor,
+                                            side: const BorderSide(color: AppTheme.errorColor),
+                                            visualDensity: VisualDensity.compact,
+                                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                          ),
+                                          onPressed: _showAddAllergyDialog,
+                                        ),
+                                      ],
+                                    ],
+                                  );
+                                }
+
+                                return Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Expanded(child: titleWidget),
+                                    if (canEditMedical) ...[
+                                      const SizedBox(width: 8),
+                                      OutlinedButton.icon(
+                                        icon: const Icon(Icons.add_alert, size: 14),
+                                        label: const Text('Add Alert', style: TextStyle(fontSize: 12)),
+                                        style: OutlinedButton.styleFrom(
+                                          foregroundColor: AppTheme.errorColor,
+                                          side: const BorderSide(color: AppTheme.errorColor),
+                                          visualDensity: VisualDensity.compact,
+                                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                        ),
+                                        onPressed: _showAddAllergyDialog,
+                                      ),
+                                    ],
+                                  ],
+                                );
+                              },
                             ),
                             const SizedBox(height: 12),
                             if (_allergies.isEmpty)
@@ -780,29 +818,67 @@ class _MedicalDetailsScreenState extends ConsumerState<MedicalDetailsScreen> {
                                 }).toList(),
                               ),
                             const SizedBox(height: 16),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                const Row(
+                            LayoutBuilder(
+                              builder: (context, constraints) {
+                                final isNarrow = constraints.maxWidth < 500;
+                                final titleWidget = const Row(
                                   children: [
                                     Icon(Icons.vaccines_outlined, color: AppTheme.primaryColor, size: 20),
                                     SizedBox(width: 8),
-                                    Text('Immunizations & Vaccinations', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppTheme.primaryColor)),
-                                  ],
-                                ),
-                                if (canEditMedical)
-                                  OutlinedButton.icon(
-                                    icon: const Icon(Icons.add, size: 14),
-                                    label: const Text('Add Vaccine', style: TextStyle(fontSize: 12)),
-                                    style: OutlinedButton.styleFrom(
-                                      foregroundColor: AppTheme.primaryColor,
-                                      side: const BorderSide(color: AppTheme.primaryColor),
-                                      visualDensity: VisualDensity.compact,
-                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                    Expanded(
+                                      child: Text(
+                                        'Immunizations & Vaccinations',
+                                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppTheme.primaryColor),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
                                     ),
-                                    onPressed: _showAddVaccinationDialog,
-                                  ),
-                              ],
+                                  ],
+                                );
+
+                                if (isNarrow) {
+                                  return Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      titleWidget,
+                                      if (canEditMedical) ...[
+                                        const SizedBox(height: 8),
+                                        OutlinedButton.icon(
+                                          icon: const Icon(Icons.add, size: 14),
+                                          label: const Text('Add Vaccine', style: TextStyle(fontSize: 12)),
+                                          style: OutlinedButton.styleFrom(
+                                            foregroundColor: AppTheme.primaryColor,
+                                            side: const BorderSide(color: AppTheme.primaryColor),
+                                            visualDensity: VisualDensity.compact,
+                                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                          ),
+                                          onPressed: _showAddVaccinationDialog,
+                                        ),
+                                      ],
+                                    ],
+                                  );
+                                }
+
+                                return Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Expanded(child: titleWidget),
+                                    if (canEditMedical) ...[
+                                      const SizedBox(width: 8),
+                                      OutlinedButton.icon(
+                                        icon: const Icon(Icons.add, size: 14),
+                                        label: const Text('Add Vaccine', style: TextStyle(fontSize: 12)),
+                                        style: OutlinedButton.styleFrom(
+                                          foregroundColor: AppTheme.primaryColor,
+                                          side: const BorderSide(color: AppTheme.primaryColor),
+                                          visualDensity: VisualDensity.compact,
+                                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                        ),
+                                        onPressed: _showAddVaccinationDialog,
+                                      ),
+                                    ],
+                                  ],
+                                );
+                              },
                             ),
                             const SizedBox(height: 8),
                             if (_vaccinations.isEmpty)
@@ -844,16 +920,25 @@ class _MedicalDetailsScreenState extends ConsumerState<MedicalDetailsScreen> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                const Row(
-                                  children: [
-                                    Icon(Icons.medication_outlined, color: AppTheme.primaryColor),
-                                    SizedBox(width: 8),
-                                    Text('Prescriptions & Medication Management', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                                  ],
+                                const Expanded(
+                                  child: Row(
+                                    children: [
+                                      Icon(Icons.medication_outlined, color: AppTheme.primaryColor),
+                                      SizedBox(width: 8),
+                                      Expanded(
+                                        child: Text(
+                                          'Prescriptions & Medication Management',
+                                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                                 if (!canEditMedical)
                                   Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                    margin: const EdgeInsets.only(left: 8),
                                     decoration: BoxDecoration(color: Colors.grey.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(4)),
                                     child: const Text('Read-Only', style: TextStyle(fontSize: 10, color: Colors.grey, fontWeight: FontWeight.bold)),
                                   ),
@@ -990,16 +1075,25 @@ class _MedicalDetailsScreenState extends ConsumerState<MedicalDetailsScreen> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                const Row(
-                                  children: [
-                                    Icon(Icons.monitor_heart_outlined, color: Colors.redAccent),
-                                    SizedBox(width: 8),
-                                    Text('Vitals Checks & Logs', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                                  ],
+                                const Expanded(
+                                  child: Row(
+                                    children: [
+                                      Icon(Icons.monitor_heart_outlined, color: Colors.redAccent),
+                                      SizedBox(width: 8),
+                                      Expanded(
+                                        child: Text(
+                                          'Vitals Checks & Logs',
+                                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                                 if (!canEditMedical)
                                   Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                    margin: const EdgeInsets.only(left: 8),
                                     decoration: BoxDecoration(color: Colors.grey.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(4)),
                                     child: const Text('Read-Only', style: TextStyle(fontSize: 10, color: Colors.grey, fontWeight: FontWeight.bold)),
                                   ),
@@ -1104,26 +1198,25 @@ class _MedicalDetailsScreenState extends ConsumerState<MedicalDetailsScreen> {
         borderRadius: BorderRadius.circular(10),
         border: Border.all(color: const Color(0xFFBFDBFE)),
       ),
-      child: Row(
-        children: [
-          const Icon(Icons.visibility_outlined, color: Color(0xFF1D4ED8), size: 22),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Principal / Administrative Oversight Console (Read-Only Mode)',
-                  style: TextStyle(color: Color(0xFF1E3A8A), fontSize: 13, fontWeight: FontWeight.bold),
-                ),
-                Text(
-                  'Reviewing complete medical dossier, clinical diagnoses, vitals trends, and uploaded prescription documents.',
-                  style: TextStyle(color: Colors.blueGrey.shade800, fontSize: 12),
-                ),
-              ],
-            ),
-          ),
-          Container(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final isNarrow = constraints.maxWidth < 600;
+          final titleCol = Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Principal / Administrative Oversight Console (Read-Only Mode)',
+                style: TextStyle(color: Color(0xFF1E3A8A), fontSize: 13, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                'Reviewing complete medical dossier, clinical diagnoses, vitals trends, and uploaded prescription documents.',
+                style: TextStyle(color: Colors.blueGrey.shade800, fontSize: 12),
+              ),
+            ],
+          );
+
+          final readOnlyBadge = Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
               color: const Color(0xFF1E40AF),
@@ -1133,8 +1226,35 @@ class _MedicalDetailsScreenState extends ConsumerState<MedicalDetailsScreen> {
               'READ ONLY',
               style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 0.5),
             ),
-          ),
-        ],
+          );
+
+          if (isNarrow) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Icon(Icons.visibility_outlined, color: Color(0xFF1D4ED8), size: 22),
+                    readOnlyBadge,
+                  ],
+                ),
+                const SizedBox(height: 8),
+                titleCol,
+              ],
+            );
+          }
+
+          return Row(
+            children: [
+              const Icon(Icons.visibility_outlined, color: Color(0xFF1D4ED8), size: 22),
+              const SizedBox(width: 10),
+              Expanded(child: titleCol),
+              const SizedBox(width: 12),
+              readOnlyBadge,
+            ],
+          );
+        },
       ),
     );
   }

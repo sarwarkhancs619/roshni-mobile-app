@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../localization/localization.dart';
 import '../../theme/theme.dart';
+import '../../config/app_config.dart';
+import '../../services/update_service.dart';
 import '../../../features/auth/presentation/auth_providers.dart';
 
 class AppDrawer extends ConsumerWidget {
@@ -46,10 +48,14 @@ class AppDrawer extends ConsumerWidget {
             accountName: Text(
               user?.displayNameWithRole ?? user?.fullName ?? '',
               style: const TextStyle(fontWeight: FontWeight.bold),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
             accountEmail: Text(
               user?.email ?? '',
               style: const TextStyle(color: Colors.white70),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
           
@@ -65,7 +71,7 @@ class AppDrawer extends ConsumerWidget {
                   route: _getDashboardRoute(user?.role),
                   currentRoute: currentRoute,
                 ),
-                if (user?.role == 'principal' || user?.role == 'admin')
+                if (user?.role == 'principal' || user?.role == 'admin') ...[
                   _buildDrawerItem(
                     context: context,
                     icon: Icons.security,
@@ -73,6 +79,14 @@ class AppDrawer extends ConsumerWidget {
                     route: '/dashboard/principal',
                     currentRoute: currentRoute,
                   ),
+                  _buildDrawerItem(
+                    context: context,
+                    icon: Icons.system_update_alt,
+                    title: 'App Releases & Updates',
+                    route: '/admin/releases',
+                    currentRoute: currentRoute,
+                  ),
+                ],
                 _buildDrawerItem(
                   context: context,
                   icon: Icons.people,
@@ -216,6 +230,16 @@ class AppDrawer extends ConsumerWidget {
                   route: '/settings',
                   currentRoute: currentRoute,
                 ),
+                ListTile(
+                  leading: const Icon(Icons.sync, color: AppTheme.primaryColor),
+                  title: const Text('Check for Updates', style: TextStyle(fontWeight: FontWeight.w500, fontSize: 14)),
+                  subtitle: const Text('v${AppConfig.appVersion} (#${AppConfig.appBuildNumber})', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                  trailing: const Icon(Icons.chevron_right, size: 18, color: Colors.grey),
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    UpdateService.checkForUpdates(context, isManualCheck: true);
+                  },
+                ),
               ],
             ),
           ),
@@ -230,10 +254,14 @@ class AppDrawer extends ConsumerWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      localizations.translate('language'),
-                      style: const TextStyle(fontWeight: FontWeight.w500),
+                    Expanded(
+                      child: Text(
+                        localizations.translate('language'),
+                        style: const TextStyle(fontWeight: FontWeight.w500),
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
+                    const SizedBox(width: 8),
                     OutlinedButton(
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
@@ -303,6 +331,8 @@ class AppDrawer extends ConsumerWidget {
           fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
           color: textColor,
         ),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
       ),
       selected: isSelected,
       selectedTileColor: isDark ? const Color(0xFF3B82F6).withOpacity(0.2) : AppTheme.primaryColor.withOpacity(0.08),

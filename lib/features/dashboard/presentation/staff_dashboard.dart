@@ -46,38 +46,56 @@ class StaffDashboardScreen extends ConsumerWidget {
             const SizedBox(height: 24),
 
             // Statistics row
-            Row(
-              children: [
-                Expanded(
-                  child: _buildCountCard(
-                    context,
-                    title: 'Assigned Friends',
-                    value: '${assignedFriends.length}',
-                    icon: Icons.people,
-                    color: AppTheme.primaryColor,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: _buildCountCard(
-                    context,
-                    title: 'Active Today',
-                    value: '$activeCount/${assignedFriends.length}',
-                    icon: Icons.check_box_outlined,
-                    color: AppTheme.successColor,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: _buildCountCard(
-                    context,
-                    title: 'Evaluated',
-                    value: '$evaluatedCount/${assignedFriends.length}',
-                    icon: Icons.star_outline,
-                    color: AppTheme.accentColor,
-                  ),
-                ),
-              ],
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final card1 = _buildCountCard(
+                  context,
+                  title: 'Assigned Friends',
+                  value: '${assignedFriends.length}',
+                  icon: Icons.people,
+                  color: AppTheme.primaryColor,
+                );
+                final card2 = _buildCountCard(
+                  context,
+                  title: 'Active Today',
+                  value: '$activeCount/${assignedFriends.length}',
+                  icon: Icons.check_box_outlined,
+                  color: AppTheme.successColor,
+                );
+                final card3 = _buildCountCard(
+                  context,
+                  title: 'Evaluated',
+                  value: '$evaluatedCount/${assignedFriends.length}',
+                  icon: Icons.star_outline,
+                  color: AppTheme.accentColor,
+                );
+
+                if (constraints.maxWidth < 650) {
+                  return Column(
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(child: card1),
+                          const SizedBox(width: 12),
+                          Expanded(child: card2),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      card3,
+                    ],
+                  );
+                }
+
+                return Row(
+                  children: [
+                    Expanded(child: card1),
+                    const SizedBox(width: 16),
+                    Expanded(child: card2),
+                    const SizedBox(width: 16),
+                    Expanded(child: card3),
+                  ],
+                );
+              },
             ),
             const SizedBox(height: 24),
 
@@ -263,12 +281,15 @@ class StaffDashboardScreen extends ConsumerWidget {
             children: [
               const Icon(Icons.store, color: Colors.white, size: 36),
               const SizedBox(width: 12),
-              Text(
-                '${localizations.translate(workshopId)} Workshop Portal',
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
+              Expanded(
+                child: Text(
+                  '${localizations.translate(workshopId)} Workshop Portal',
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
             ],
           ),
@@ -291,14 +312,14 @@ class StaffDashboardScreen extends ConsumerWidget {
   }) {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(20.0),
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 14.0),
         child: Row(
           children: [
             CircleAvatar(
               backgroundColor: color.withOpacity(0.1),
               child: Icon(icon, color: color),
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -308,10 +329,14 @@ class StaffDashboardScreen extends ConsumerWidget {
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                           fontWeight: FontWeight.bold,
                         ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                   Text(
                     title,
                     style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ],
               ),

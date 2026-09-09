@@ -454,20 +454,27 @@ class _MedicalDashboardScreenState extends ConsumerState<MedicalDashboardScreen>
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Beneficiaries Medical & Health Directory',
-                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                            ),
-                            Text(
-                              'Showing ${filtered.length} of ${friends.length} registered beneficiaries health profiles.',
-                              style: const TextStyle(color: Colors.grey, fontSize: 12),
-                            ),
-                          ],
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Beneficiaries Medical & Health Directory',
+                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              Text(
+                                'Showing ${filtered.length} of ${friends.length} registered beneficiaries health profiles.',
+                                style: const TextStyle(color: Colors.grey, fontSize: 12),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
                         ),
-                        if (isPrincipalOrAdmin)
+                        if (isPrincipalOrAdmin) ...[
+                          const SizedBox(width: 8),
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                             decoration: BoxDecoration(
@@ -477,6 +484,7 @@ class _MedicalDashboardScreenState extends ConsumerState<MedicalDashboardScreen>
                             ),
                             child: const Text('Oversight View', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.red)),
                           ),
+                        ],
                       ],
                     ),
                     const SizedBox(height: 16),

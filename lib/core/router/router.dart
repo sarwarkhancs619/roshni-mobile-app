@@ -24,6 +24,7 @@ import '../../features/medical/presentation/medical_details_screen.dart';
 import '../../features/reports/presentation/reports_screen.dart';
 import '../../features/analytics/presentation/analytics_screen.dart';
 import '../../features/settings/presentation/settings_screen.dart';
+import '../../features/settings/presentation/release_management_screen.dart';
 
 import '../../features/auth/presentation/auth_providers.dart';
 
@@ -70,6 +71,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/dashboard/admin/permissions',
         builder: (context, state) => const PermissionRequestsScreen(),
+      ),
+      GoRoute(
+        path: '/admin/releases',
+        builder: (context, state) => const ReleaseManagementScreen(),
       ),
       GoRoute(
         path: '/dashboard/staff',

@@ -644,17 +644,12 @@ class _ExecutiveReportViewState extends ConsumerState<ExecutiveReportView> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Top KPI Cards for this Beneficiary
-        Row(
-          children: [
-            _buildKpiMiniCard('Overall Participation', '4.4 / 5.0', 'High Engagement', Icons.trending_up, Colors.blue),
-            const SizedBox(width: 12),
-            _buildKpiMiniCard('Task Independence', '85%', 'Self-directed', Icons.psychology, Colors.teal),
-            const SizedBox(width: 12),
-            _buildKpiMiniCard('Workshop Attendance', '96%', 'Present 24/25 days', Icons.event_available, Colors.green),
-            const SizedBox(width: 12),
-            _buildKpiMiniCard('Vault Documents', '${docs.length}', 'Official Records', Icons.folder_shared, Colors.purple),
-          ],
-        ),
+        _buildKpiRowOrGrid([
+          _buildKpiMiniCard('Overall Participation', '4.4 / 5.0', 'High Engagement', Icons.trending_up, Colors.blue),
+          _buildKpiMiniCard('Task Independence', '85%', 'Self-directed', Icons.psychology, Colors.teal),
+          _buildKpiMiniCard('Workshop Attendance', '96%', 'Present 24/25 days', Icons.event_available, Colors.green),
+          _buildKpiMiniCard('Vault Documents', '${docs.length}', 'Official Records', Icons.folder_shared, Colors.purple),
+        ]),
         const SizedBox(height: 24),
 
         // Section 1: Demographics
@@ -862,17 +857,12 @@ class _ExecutiveReportViewState extends ConsumerState<ExecutiveReportView> {
         ),
 
         // Workshop Top KPI Cards
-        Row(
-          children: [
-            _buildKpiMiniCard('Enrolled Headcount', '${ws.enrolledBeneficiaries.length} / ${ws.capacity}', 'Capacity Utilization', Icons.groups, Colors.blue),
-            const SizedBox(width: 12),
-            _buildKpiMiniCard('Average Participation', '${ws.averageParticipation} / 5.0', 'Active Engagement', Icons.grade, Colors.amber.shade800),
-            const SizedBox(width: 12),
-            _buildKpiMiniCard('Task Completion Rate', '${(ws.averageTaskCompletion * 20).toInt()}%', 'Standard Execution', Icons.task_alt, Colors.teal),
-            const SizedBox(width: 12),
-            _buildKpiMiniCard('Average Attendance', '${ws.averageAttendanceRate}%', 'Weekly Average', Icons.event_available, Colors.green),
-          ],
-        ),
+        _buildKpiRowOrGrid([
+          _buildKpiMiniCard('Enrolled Headcount', '${ws.enrolledBeneficiaries.length} / ${ws.capacity}', 'Capacity Utilization', Icons.groups, Colors.blue),
+          _buildKpiMiniCard('Average Participation', '${ws.averageParticipation} / 5.0', 'Active Engagement', Icons.grade, Colors.amber.shade800),
+          _buildKpiMiniCard('Task Completion Rate', '${(ws.averageTaskCompletion * 20).toInt()}%', 'Standard Execution', Icons.task_alt, Colors.teal),
+          _buildKpiMiniCard('Average Attendance', '${ws.averageAttendanceRate}%', 'Weekly Average', Icons.event_available, Colors.green),
+        ]),
         const SizedBox(height: 24),
 
         // Section 1: Curriculum Skills
@@ -918,39 +908,49 @@ class _ExecutiveReportViewState extends ConsumerState<ExecutiveReportView> {
             border: Border.all(color: isDark ? const Color(0xFF334155) : Colors.grey.shade300),
             borderRadius: BorderRadius.circular(8),
           ),
-          child: Table(
-            columnWidths: const {
-              0: FlexColumnWidth(1.5),
-              1: FlexColumnWidth(2.5),
-              2: FlexColumnWidth(1.5),
-              3: FlexColumnWidth(1.2),
-              4: FlexColumnWidth(1.2),
-              5: FlexColumnWidth(2.0),
-            },
-            children: [
-              TableRow(
-                decoration: BoxDecoration(color: isDark ? const Color(0xFF1E293B) : Colors.grey.shade100),
-                children: const [
-                  _TableHeaderCell('Reg #'),
-                  _TableHeaderCell('Beneficiary Name'),
-                  _TableHeaderCell('House'),
-                  _TableHeaderCell('Gender'),
-                  _TableHeaderCell('Status'),
-                  _TableHeaderCell('Guardian Phone'),
-                ],
-              ),
-              for (var f in ws.enrolledBeneficiaries)
-                TableRow(
-                  children: [
-                    _TableCell(f.registrationNumber, isBold: true),
-                    _TableCell(f.fullName),
-                    _TableCell(f.assignedHouseId.toUpperCase()),
-                    _TableCell(f.gender.toUpperCase()),
-                    _TableCell(f.status.toUpperCase(), textColor: Colors.green.shade800),
-                    _TableCell(f.guardianPhone),
-                  ],
+          child: LayoutBuilder(
+            builder: (context, tableConstraints) {
+              return SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minWidth: tableConstraints.maxWidth < 650 ? 650 : tableConstraints.maxWidth),
+                  child: Table(
+                    columnWidths: const {
+                      0: FlexColumnWidth(1.5),
+                      1: FlexColumnWidth(2.5),
+                      2: FlexColumnWidth(1.5),
+                      3: FlexColumnWidth(1.2),
+                      4: FlexColumnWidth(1.2),
+                      5: FlexColumnWidth(2.0),
+                    },
+                    children: [
+                      TableRow(
+                        decoration: BoxDecoration(color: isDark ? const Color(0xFF1E293B) : Colors.grey.shade100),
+                        children: const [
+                          _TableHeaderCell('Reg #'),
+                          _TableHeaderCell('Beneficiary Name'),
+                          _TableHeaderCell('House'),
+                          _TableHeaderCell('Gender'),
+                          _TableHeaderCell('Status'),
+                          _TableHeaderCell('Guardian Phone'),
+                        ],
+                      ),
+                      for (var f in ws.enrolledBeneficiaries)
+                        TableRow(
+                          children: [
+                            _TableCell(f.registrationNumber, isBold: true),
+                            _TableCell(f.fullName),
+                            _TableCell(f.assignedHouseId.toUpperCase()),
+                            _TableCell(f.gender.toUpperCase()),
+                            _TableCell(f.status.toUpperCase(), textColor: Colors.green.shade800),
+                            _TableCell(f.guardianPhone),
+                          ],
+                        ),
+                    ],
+                  ),
                 ),
-            ],
+              );
+            },
           ),
         ),
       ],
@@ -970,17 +970,12 @@ class _ExecutiveReportViewState extends ConsumerState<ExecutiveReportView> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Institutional Vocational Metrics
-        Row(
-          children: [
-            _buildKpiMiniCard('Total Vocational Headcount', '$totalEnrolled Friends', 'Active Across Units', Icons.groups, Colors.blue),
-            const SizedBox(width: 12),
-            _buildKpiMiniCard('Operational Workshops', '${allWs.length} Units', 'Bakery, Woodwork, Farm, etc.', Icons.storefront, Colors.amber.shade800),
-            const SizedBox(width: 12),
-            _buildKpiMiniCard('Institutional Attendance', '94.2%', 'Aggregate Presence', Icons.event_available, Colors.green),
-            const SizedBox(width: 12),
-            _buildKpiMiniCard('Capacity Utilization', '${(totalEnrolled / (allWs.length * 15) * 100).toInt()}%', 'Based on 90 Max Seats', Icons.pie_chart, Colors.purple),
-          ],
-        ),
+        _buildKpiRowOrGrid([
+          _buildKpiMiniCard('Total Vocational Headcount', '$totalEnrolled Friends', 'Active Across Units', Icons.groups, Colors.blue),
+          _buildKpiMiniCard('Operational Workshops', '${allWs.length} Units', 'Bakery, Woodwork, Farm, etc.', Icons.storefront, Colors.amber.shade800),
+          _buildKpiMiniCard('Institutional Attendance', '94.2%', 'Aggregate Presence', Icons.event_available, Colors.green),
+          _buildKpiMiniCard('Capacity Utilization', '${(totalEnrolled / (allWs.length * 15) * 100).toInt()}%', 'Based on 90 Max Seats', Icons.pie_chart, Colors.purple),
+        ]),
         const SizedBox(height: 24),
 
         _buildSectionHeader('Vocational Workshop Comparison Matrix', Icons.table_chart),
@@ -991,48 +986,58 @@ class _ExecutiveReportViewState extends ConsumerState<ExecutiveReportView> {
             border: Border.all(color: isDark ? const Color(0xFF334155) : Colors.grey.shade300),
             borderRadius: BorderRadius.circular(8),
           ),
-          child: Table(
-            columnWidths: const {
-              0: FlexColumnWidth(2.5),
-              1: FlexColumnWidth(1.5),
-              2: FlexColumnWidth(1.5),
-              3: FlexColumnWidth(1.5),
-              4: FlexColumnWidth(1.5),
-              5: FlexColumnWidth(3.0),
-            },
-            children: [
-              TableRow(
-                decoration: BoxDecoration(color: isDark ? const Color(0xFF1E293B) : Colors.grey.shade100),
-                children: const [
-                  _TableHeaderCell('Workshop Unit'),
-                  _TableHeaderCell('Enrolled / Cap'),
-                  _TableHeaderCell('Avg Part. (5.0)'),
-                  _TableHeaderCell('Task Rate'),
-                  _TableHeaderCell('Attendance'),
-                  _TableHeaderCell('Core Curriculum Modules'),
-                ],
-              ),
-              for (var ws in allWs)
-                TableRow(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.all(10.0),
-                      child: Row(
-                        children: [
-                          Icon(_workshopIcons[ws.id] ?? Icons.handyman, size: 18, color: AppTheme.primaryColor),
-                          const SizedBox(width: 8),
-                          Expanded(child: Text(ws.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+          child: LayoutBuilder(
+            builder: (context, tableConstraints) {
+              return SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minWidth: tableConstraints.maxWidth < 650 ? 650 : tableConstraints.maxWidth),
+                  child: Table(
+                    columnWidths: const {
+                      0: FlexColumnWidth(2.5),
+                      1: FlexColumnWidth(1.5),
+                      2: FlexColumnWidth(1.5),
+                      3: FlexColumnWidth(1.5),
+                      4: FlexColumnWidth(1.5),
+                      5: FlexColumnWidth(3.0),
+                    },
+                    children: [
+                      TableRow(
+                        decoration: BoxDecoration(color: isDark ? const Color(0xFF1E293B) : Colors.grey.shade100),
+                        children: const [
+                          _TableHeaderCell('Workshop Unit'),
+                          _TableHeaderCell('Enrolled / Cap'),
+                          _TableHeaderCell('Avg Part. (5.0)'),
+                          _TableHeaderCell('Task Rate'),
+                          _TableHeaderCell('Attendance'),
+                          _TableHeaderCell('Core Curriculum Modules'),
                         ],
                       ),
-                    ),
-                    _TableCell('${ws.enrolledBeneficiaries.length} / ${ws.capacity}'),
-                    _TableCell('${ws.averageParticipation}'),
-                    _TableCell('${(ws.averageTaskCompletion * 20).toInt()}%'),
-                    _TableCell('${ws.averageAttendanceRate}%', textColor: Colors.green.shade800),
-                    _TableCell(ws.skills.take(3).join(', ')),
-                  ],
+                      for (var ws in allWs)
+                        TableRow(
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.all(10.0),
+                              child: Row(
+                                children: [
+                                  Icon(_workshopIcons[ws.id] ?? Icons.handyman, size: 18, color: AppTheme.primaryColor),
+                                  const SizedBox(width: 8),
+                                  Expanded(child: Text(ws.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+                                ],
+                              ),
+                            ),
+                            _TableCell('${ws.enrolledBeneficiaries.length} / ${ws.capacity}'),
+                            _TableCell('${ws.averageParticipation}'),
+                            _TableCell('${(ws.averageTaskCompletion * 20).toInt()}%'),
+                            _TableCell('${ws.averageAttendanceRate}%', textColor: Colors.green.shade800),
+                            _TableCell(ws.skills.take(3).join(', ')),
+                          ],
+                        ),
+                    ],
+                  ),
                 ),
-            ],
+              );
+            },
           ),
         ),
       ],
@@ -1051,17 +1056,12 @@ class _ExecutiveReportViewState extends ConsumerState<ExecutiveReportView> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Roster Metrics
-        Row(
-          children: [
-            _buildKpiMiniCard('Total Registered', '${friends.length}', 'Master Roster', Icons.groups, Colors.blue),
-            const SizedBox(width: 12),
-            _buildKpiMiniCard('Active Enrollment', '$activeCount Friends', '${((activeCount / (friends.isEmpty ? 1 : friends.length)) * 100).toInt()}% Active', Icons.check_circle, Colors.green),
-            const SizedBox(width: 12),
-            _buildKpiMiniCard('Assigned Workshops', '6 Units', 'Vocational Placements', Icons.storefront, Colors.orange),
-            const SizedBox(width: 12),
-            _buildKpiMiniCard('Residential Houses', '2 Houses', 'Amin & Roshni House', Icons.home, Colors.purple),
-          ],
-        ),
+        _buildKpiRowOrGrid([
+          _buildKpiMiniCard('Total Registered', '${friends.length}', 'Master Roster', Icons.groups, Colors.blue),
+          _buildKpiMiniCard('Active Enrollment', '$activeCount Friends', '${((activeCount / (friends.isEmpty ? 1 : friends.length)) * 100).toInt()}% Active', Icons.check_circle, Colors.green),
+          _buildKpiMiniCard('Assigned Workshops', '6 Units', 'Vocational Placements', Icons.storefront, Colors.orange),
+          _buildKpiMiniCard('Residential Houses', '2 Houses', 'Amin & Roshni House', Icons.home, Colors.purple),
+        ]),
         const SizedBox(height: 24),
 
         _buildSectionHeader('Master Beneficiaries Directory', Icons.format_list_numbered),
@@ -1072,42 +1072,52 @@ class _ExecutiveReportViewState extends ConsumerState<ExecutiveReportView> {
             border: Border.all(color: isDark ? const Color(0xFF334155) : Colors.grey.shade300),
             borderRadius: BorderRadius.circular(8),
           ),
-          child: Table(
-            columnWidths: const {
-              0: FlexColumnWidth(1.5),
-              1: FlexColumnWidth(2.5),
-              2: FlexColumnWidth(1.8),
-              3: FlexColumnWidth(1.5),
-              4: FlexColumnWidth(1.2),
-              5: FlexColumnWidth(1.5),
-              6: FlexColumnWidth(1.2),
-            },
-            children: [
-              TableRow(
-                decoration: BoxDecoration(color: isDark ? const Color(0xFF1E293B) : Colors.grey.shade100),
-                children: const [
-                  _TableHeaderCell('Reg #'),
-                  _TableHeaderCell('Full Name'),
-                  _TableHeaderCell('Assigned Workshop'),
-                  _TableHeaderCell('House'),
-                  _TableHeaderCell('Age / Gen'),
-                  _TableHeaderCell('Admission'),
-                  _TableHeaderCell('Status'),
-                ],
-              ),
-              for (var f in friends)
-                TableRow(
-                  children: [
-                    _TableCell(f.registrationNumber, isBold: true),
-                    _TableCell(f.fullName),
-                    _TableCell(ExecutiveReportBuilder.workshopDisplayNames[f.assignedWorkshopId] ?? f.assignedWorkshopId.toUpperCase()),
-                    _TableCell(f.assignedHouseId.toUpperCase()),
-                    _TableCell('${f.age}y / ${f.gender[0].toUpperCase()}'),
-                    _TableCell(f.admissionDate.toIso8601String().split('T')[0]),
-                    _TableCell(f.status.toUpperCase(), textColor: Colors.green.shade800),
-                  ],
+          child: LayoutBuilder(
+            builder: (context, tableConstraints) {
+              return SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minWidth: tableConstraints.maxWidth < 700 ? 700 : tableConstraints.maxWidth),
+                  child: Table(
+                    columnWidths: const {
+                      0: FlexColumnWidth(1.5),
+                      1: FlexColumnWidth(2.5),
+                      2: FlexColumnWidth(1.8),
+                      3: FlexColumnWidth(1.5),
+                      4: FlexColumnWidth(1.2),
+                      5: FlexColumnWidth(1.5),
+                      6: FlexColumnWidth(1.2),
+                    },
+                    children: [
+                      TableRow(
+                        decoration: BoxDecoration(color: isDark ? const Color(0xFF1E293B) : Colors.grey.shade100),
+                        children: const [
+                          _TableHeaderCell('Reg #'),
+                          _TableHeaderCell('Full Name'),
+                          _TableHeaderCell('Assigned Workshop'),
+                          _TableHeaderCell('House'),
+                          _TableHeaderCell('Age / Gen'),
+                          _TableHeaderCell('Admission'),
+                          _TableHeaderCell('Status'),
+                        ],
+                      ),
+                      for (var f in friends)
+                        TableRow(
+                          children: [
+                            _TableCell(f.registrationNumber, isBold: true),
+                            _TableCell(f.fullName),
+                            _TableCell(ExecutiveReportBuilder.workshopDisplayNames[f.assignedWorkshopId] ?? f.assignedWorkshopId.toUpperCase()),
+                            _TableCell(f.assignedHouseId.toUpperCase()),
+                            _TableCell('${f.age}y / ${f.gender[0].toUpperCase()}'),
+                            _TableCell(f.admissionDate.toIso8601String().split('T')[0]),
+                            _TableCell(f.status.toUpperCase(), textColor: Colors.green.shade800),
+                          ],
+                        ),
+                    ],
+                  ),
                 ),
-            ],
+              );
+            },
           ),
         ),
       ],
@@ -1115,10 +1125,10 @@ class _ExecutiveReportViewState extends ConsumerState<ExecutiveReportView> {
   }
 
   Widget _buildOfficialReportFooter(BuildContext context, bool isDark) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Column(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isNarrow = constraints.maxWidth < 600;
+        final leftText = Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
@@ -1131,14 +1141,15 @@ class _ExecutiveReportViewState extends ConsumerState<ExecutiveReportView> {
               style: TextStyle(fontSize: 10, color: Colors.grey.shade500),
             ),
           ],
-        ),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.end,
+        );
+
+        final rightSignee = Column(
+          crossAxisAlignment: isNarrow ? CrossAxisAlignment.start : CrossAxisAlignment.end,
           children: [
             Container(
               width: 140,
-              decoration: const BoxDecoration(
-                border: Border(bottom: BorderSide(color: Colors.black45, width: 1)),
+              decoration: BoxDecoration(
+                border: Border(bottom: BorderSide(color: isDark ? Colors.white54 : Colors.black45, width: 1)),
               ),
             ),
             const SizedBox(height: 4),
@@ -1151,8 +1162,67 @@ class _ExecutiveReportViewState extends ConsumerState<ExecutiveReportView> {
               style: TextStyle(fontSize: 10, color: Colors.grey),
             ),
           ],
-        ),
-      ],
+        );
+
+        if (isNarrow) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              leftText,
+              const SizedBox(height: 20),
+              rightSignee,
+            ],
+          );
+        }
+
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(child: leftText),
+            const SizedBox(width: 16),
+            rightSignee,
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildKpiRowOrGrid(List<Widget> cards) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth < 650) {
+          return Column(
+            children: [
+              Row(
+                children: [
+                  cards[0],
+                  const SizedBox(width: 12),
+                  cards[1],
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  cards[2],
+                  const SizedBox(width: 12),
+                  cards[3],
+                ],
+              ),
+            ],
+          );
+        }
+        return Row(
+          children: [
+            cards[0],
+            const SizedBox(width: 12),
+            cards[1],
+            const SizedBox(width: 12),
+            cards[2],
+            const SizedBox(width: 12),
+            cards[3],
+          ],
+        );
+      },
     );
   }
 
@@ -1203,42 +1273,60 @@ class _ExecutiveReportViewState extends ConsumerState<ExecutiveReportView> {
       children: [
         Icon(icon, size: 18, color: AppTheme.primaryColor),
         const SizedBox(width: 8),
-        Text(
-          title,
-          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+        Expanded(
+          child: Text(
+            title,
+            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+          ),
         ),
       ],
     );
   }
 
   Widget _buildDataRow(String label1, String value1, String label2, String value2) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(
-          child: RichText(
-            text: TextSpan(
-              style: const TextStyle(fontSize: 12, color: Colors.black87),
-              children: [
-                TextSpan(text: '$label1 ', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
-                TextSpan(text: value1, style: const TextStyle(fontWeight: FontWeight.w600)),
-              ],
-            ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isNarrow = constraints.maxWidth < 500;
+        final textColor = Theme.of(context).brightness == Brightness.dark ? Colors.white70 : Colors.black87;
+        final item1 = RichText(
+          text: TextSpan(
+            style: TextStyle(fontSize: 12, color: textColor),
+            children: [
+              TextSpan(text: '$label1 ', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
+              TextSpan(text: value1, style: const TextStyle(fontWeight: FontWeight.w600)),
+            ],
           ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: RichText(
-            text: TextSpan(
-              style: const TextStyle(fontSize: 12, color: Colors.black87),
-              children: [
-                TextSpan(text: '$label2 ', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
-                TextSpan(text: value2, style: const TextStyle(fontWeight: FontWeight.w600)),
-              ],
-            ),
+        );
+        final item2 = RichText(
+          text: TextSpan(
+            style: TextStyle(fontSize: 12, color: textColor),
+            children: [
+              TextSpan(text: '$label2 ', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
+              TextSpan(text: value2, style: const TextStyle(fontWeight: FontWeight.w600)),
+            ],
           ),
-        ),
-      ],
+        );
+
+        if (isNarrow) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              item1,
+              const SizedBox(height: 6),
+              item2,
+            ],
+          );
+        }
+
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(child: item1),
+            const SizedBox(width: 12),
+            Expanded(child: item2),
+          ],
+        );
+      },
     );
   }
 
