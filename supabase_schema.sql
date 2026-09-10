@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   email TEXT UNIQUE NOT NULL,
   full_name TEXT NOT NULL,
   role TEXT NOT NULL CHECK (role IN ('admin', 'workshop_staff', 'physiotherapist', 'speech_therapist', 'medical_officer', 'house_staff')),
-  workshop_id TEXT CHECK (workshop_id IN ('bakery', 'woodwork', 'farming', 'textile', 'artwork', 'amin_house', 'roshni_house')),
+  workshop_id TEXT CHECK (workshop_id IN ('bakery', 'woodwork', 'farming', 'textile', 'artwork', 'sports', 'sunbal_house', 'amin_house', 'roshni_house')),
   is_active BOOLEAN DEFAULT TRUE,
   phone_number TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
@@ -26,7 +26,7 @@ CREATE TABLE IF NOT EXISTS public.friends (
   cnic_or_bform TEXT,
   admission_date DATE NOT NULL,
   assigned_workshop_id TEXT NOT NULL CHECK (assigned_workshop_id IN ('bakery', 'woodwork', 'farming', 'textile', 'artwork')),
-  assigned_house_id TEXT NOT NULL CHECK (assigned_house_id IN ('amin_house', 'roshni_house')),
+  assigned_house_id TEXT NOT NULL CHECK (assigned_house_id IN ('sunbal_house', 'amin_house', 'roshni_house')),
   status TEXT DEFAULT 'active' CHECK (status IN ('active', 'inactive', 'graduated', 'suspended')),
   
   -- Guardian Details

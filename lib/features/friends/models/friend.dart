@@ -75,7 +75,10 @@ class Friend {
       cnicOrBForm: json['cnicOrBForm']?.toString() ?? json['cnic_or_bform']?.toString(),
       admissionDate: parseDate(json['admissionDate'] ?? json['admission_date']),
       assignedWorkshopId: json['assignedWorkshopId']?.toString() ?? json['assigned_workshop_id']?.toString() ?? 'bakery',
-      assignedHouseId: json['assignedHouseId']?.toString() ?? json['assigned_house_id']?.toString() ?? 'amin_house',
+      assignedHouseId: () {
+        final h = json['assignedHouseId']?.toString() ?? json['assigned_house_id']?.toString() ?? 'sunbal_house';
+        return (h == 'amin_house') ? 'sunbal_house' : h;
+      }(),
       status: json['status']?.toString() ?? 'active',
       guardianName: json['guardianName']?.toString() ?? json['guardian_name']?.toString() ?? '',
       guardianRelation: json['guardianRelation']?.toString() ?? json['guardian_relation']?.toString() ?? '',

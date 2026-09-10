@@ -421,7 +421,7 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
                       prefixIcon: Icon(Icons.home),
                     ),
                     items: const [
-                      DropdownMenuItem(value: 'amin_house', child: Text('Amin House (Residential)')),
+                      DropdownMenuItem(value: 'sunbal_house', child: Text('Sunbal House (Residential)')),
                       DropdownMenuItem(value: 'roshni_house', child: Text('Roshni House (Residential)')),
                     ],
                     onChanged: (val) {

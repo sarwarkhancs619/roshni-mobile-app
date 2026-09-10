@@ -55,7 +55,10 @@ class FriendsNotifier extends StateNotifier<List<Friend>> {
       cnicOrBForm: json['cnic_or_bform']?.toString(),
       admissionDate: json['admission_date'] != null ? (DateTime.tryParse(json['admission_date'].toString()) ?? DateTime.now()) : DateTime.now(),
       assignedWorkshopId: json['assigned_workshop_id']?.toString() ?? 'bakery',
-      assignedHouseId: json['assigned_house_id']?.toString() ?? 'amin_house',
+      assignedHouseId: () {
+        final h = json['assigned_house_id']?.toString() ?? 'sunbal_house';
+        return (h == 'amin_house') ? 'sunbal_house' : h;
+      }(),
       status: json['status']?.toString() ?? 'active',
       guardianName: json['guardian_name']?.toString() ?? '',
       guardianRelation: json['guardian_relation']?.toString() ?? '',
@@ -226,7 +229,11 @@ final visibleFriendsProvider = Provider<List<Friend>>((ref) {
     if (user.role == 'workshop_staff') {
       return friends.where((f) => f.assignedWorkshopId == user.workshopId).toList();
     } else if (user.role == 'house_staff') {
-      return friends.where((f) => f.assignedHouseId == user.workshopId).toList();
+      final userHouse = (user.workshopId == 'amin_house') ? 'sunbal_house' : user.workshopId;
+      return friends.where((f) {
+        final friendHouse = (f.assignedHouseId == 'amin_house') ? 'sunbal_house' : f.assignedHouseId;
+        return friendHouse == userHouse;
+      }).toList();
     }
   }
   return friends;

@@ -50,7 +50,7 @@ class _FriendFormScreenState extends ConsumerState<FriendFormScreen> {
   String _gender = 'male';
   String _bloodGroup = 'A+';
   String _assignedWorkshop = 'bakery';
-  String _assignedHouse = 'amin_house';
+  String _assignedHouse = 'sunbal_house';
   String _status = 'active';
   String _registrationNumber = '';
 
@@ -90,7 +90,8 @@ class _FriendFormScreenState extends ConsumerState<FriendFormScreen> {
       if (user.role == 'workshop_staff') {
         _assignedWorkshop = user.workshopId ?? 'bakery';
       } else if (user.role == 'house_staff') {
-        _assignedHouse = user.workshopId ?? 'amin_house';
+        final house = user.workshopId;
+        _assignedHouse = (house == 'amin_house' || house == null) ? 'sunbal_house' : house;
       }
     }
 
@@ -126,7 +127,7 @@ class _FriendFormScreenState extends ConsumerState<FriendFormScreen> {
           _gender = friend.gender;
           _bloodGroup = friend.bloodGroup;
           _assignedWorkshop = friend.assignedWorkshopId;
-          _assignedHouse = friend.assignedHouseId;
+          _assignedHouse = (friend.assignedHouseId == 'amin_house') ? 'sunbal_house' : friend.assignedHouseId;
           _status = friend.status;
         });
 
@@ -494,7 +495,7 @@ class _FriendFormScreenState extends ConsumerState<FriendFormScreen> {
                 isExpanded: true,
                 decoration: const InputDecoration(labelText: 'Assigned House'),
                 items: [
-                  DropdownMenuItem(value: 'amin_house', child: Text(localizations.translate('amin_house'))),
+                  DropdownMenuItem(value: 'sunbal_house', child: Text(localizations.translate('sunbal_house'))),
                   DropdownMenuItem(value: 'roshni_house', child: Text(localizations.translate('roshni_house'))),
                 ],
                 onChanged: (val) => setState(() => _assignedHouse = val!),

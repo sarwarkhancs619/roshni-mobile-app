@@ -218,7 +218,7 @@ class _ExecutiveReportViewState extends ConsumerState<ExecutiveReportView> {
         bloodGroup: 'N/A',
         admissionDate: DateTime.now(),
         assignedWorkshopId: 'bakery',
-        assignedHouseId: 'amin_house',
+        assignedHouseId: 'sunbal_house',
         status: 'active',
         guardianName: 'N/A',
         guardianRelation: 'Guardian',
@@ -1060,7 +1060,7 @@ class _ExecutiveReportViewState extends ConsumerState<ExecutiveReportView> {
           _buildKpiMiniCard('Total Registered', '${friends.length}', 'Master Roster', Icons.groups, Colors.blue),
           _buildKpiMiniCard('Active Enrollment', '$activeCount Friends', '${((activeCount / (friends.isEmpty ? 1 : friends.length)) * 100).toInt()}% Active', Icons.check_circle, Colors.green),
           _buildKpiMiniCard('Assigned Workshops', '6 Units', 'Vocational Placements', Icons.storefront, Colors.orange),
-          _buildKpiMiniCard('Residential Houses', '2 Houses', 'Amin & Roshni House', Icons.home, Colors.purple),
+          _buildKpiMiniCard('Residential Houses', '2 Houses', 'Sunbal & Roshni House', Icons.home, Colors.purple),
         ]),
         const SizedBox(height: 24),
 

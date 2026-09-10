@@ -16,7 +16,7 @@ class HouseDashboardScreen extends ConsumerStatefulWidget {
 }
 
 class _HouseDashboardScreenState extends ConsumerState<HouseDashboardScreen> {
-  String _selectedHouseId = 'amin_house';
+  String _selectedHouseId = 'sunbal_house';
   String? _selectedFriendId;
   
   // House skills
@@ -116,10 +116,12 @@ class _HouseDashboardScreenState extends ConsumerState<HouseDashboardScreen> {
     // Restrict selected house if user is house staff
     final isHouseStaff = user?.role == 'house_staff';
     if (isHouseStaff && user?.workshopId != null) {
-      _selectedHouseId = user!.workshopId!;
+      _selectedHouseId = (user!.workshopId == 'amin_house') ? 'sunbal_house' : user.workshopId!;
+    } else if (_selectedHouseId == 'amin_house') {
+      _selectedHouseId = 'sunbal_house';
     }
 
-    final houseFriends = allFriends.where((f) => f.assignedHouseId == _selectedHouseId).toList();
+    final houseFriends = allFriends.where((f) => f.assignedHouseId == _selectedHouseId || (_selectedHouseId == 'sunbal_house' && f.assignedHouseId == 'amin_house')).toList();
 
     return ResponsiveLayout(
       title: '${localizations.translate(_selectedHouseId)} - ${localizations.translate('house_dashboard')}',
@@ -139,7 +141,7 @@ class _HouseDashboardScreenState extends ConsumerState<HouseDashboardScreen> {
                     isExpanded: true,
                     decoration: const InputDecoration(labelText: 'Select Residential House'),
                     items: [
-                      DropdownMenuItem(value: 'amin_house', child: Text(localizations.translate('amin_house'))),
+                      DropdownMenuItem(value: 'sunbal_house', child: Text(localizations.translate('sunbal_house'))),
                       DropdownMenuItem(value: 'roshni_house', child: Text(localizations.translate('roshni_house'))),
                     ],
                     onChanged: (val) {
